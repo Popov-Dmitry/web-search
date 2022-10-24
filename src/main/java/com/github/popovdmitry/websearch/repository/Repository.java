@@ -78,7 +78,7 @@ public class Repository {
         
         PreparedStatement preparedStatement =
                 connection.prepareStatement(String.format(
-                        "INSERT INTO %s (word, is_filtered) VALUES (?, ?)",
+                        "INSERT INTO %s (word, is_filtered) VALUES (?, ?);",
                         WORD_LIST_TABLE), Statement.RETURN_GENERATED_KEYS);
         preparedStatement.setString(1, word);
         preparedStatement.setInt(2, isFiltered);
@@ -92,7 +92,7 @@ public class Repository {
 
     public void addWordLocation(Integer wordId, Integer urlId, Integer location) throws SQLException {
         PreparedStatement preparedStatement = connection.prepareStatement(String.format(
-                "SELECT * FROM %s WHERE (word_id = ? AND url_id = ? AND location = ?)",
+                "SELECT * FROM %s WHERE (word_id = ? AND url_id = ? AND location = ?);",
                 WORD_LOCATION_TABLE
         ));
         preparedStatement.setInt(1, wordId);
@@ -105,7 +105,7 @@ public class Repository {
 
         preparedStatement =
                 connection.prepareStatement(String.format(
-                        "INSERT INTO %s (word_id, url_id, location) VALUES (?, ?, ?)",
+                        "INSERT INTO %s (word_id, url_id, location) VALUES (?, ?, ?);",
                         WORD_LOCATION_TABLE));
         preparedStatement.setInt(1, wordId);
         preparedStatement.setInt(2, urlId);
@@ -122,7 +122,7 @@ public class Repository {
 
         PreparedStatement preparedStatement =
                 connection.prepareStatement(String.format(
-                        "INSERT INTO %s (url) VALUES (?)",
+                        "INSERT INTO %s (url) VALUES (?);",
                         URL_LIST_TABLE), Statement.RETURN_GENERATED_KEYS);
         preparedStatement.setString(1, url);
         preparedStatement.executeUpdate();
@@ -135,7 +135,7 @@ public class Repository {
 
     public Integer addLinkBetweenUrl(Integer fromUrlId, Integer toUrlId) throws SQLException {
         PreparedStatement preparedStatement = connection.prepareStatement(String.format(
-                "SELECT * FROM %s WHERE (from_url_id = ? AND to_url_id = ?)",
+                "SELECT * FROM %s WHERE (from_url_id = ? AND to_url_id = ?);",
                 LINK_BETWEEN_URL_TABLE
         ));
         preparedStatement.setInt(1, fromUrlId);
@@ -147,7 +147,7 @@ public class Repository {
 
         preparedStatement =
                 connection.prepareStatement(String.format(
-                        "INSERT INTO %s (from_url_id, to_url_id) VALUES (?, ?)",
+                        "INSERT INTO %s (from_url_id, to_url_id) VALUES (?, ?);",
                         LINK_BETWEEN_URL_TABLE), Statement.RETURN_GENERATED_KEYS);
         preparedStatement.setInt(1, fromUrlId);
         preparedStatement.setInt(2, toUrlId);
@@ -162,7 +162,7 @@ public class Repository {
     public void addLinkText(String[] linkWords, Integer linkBetweenUrlId) throws SQLException {
         PreparedStatement preparedStatement =
                 connection.prepareStatement(String.format(
-                        "INSERT INTO %s (word_id, link_id) VALUES (?, ?)",
+                        "INSERT INTO %s (word_id, link_id) VALUES (?, ?);",
                         LINK_WORD_TABLE));
         connection.setAutoCommit(false);
 
@@ -182,9 +182,27 @@ public class Repository {
         preparedStatement.close();
     }
 
+    public ResultSet selectAllFrom(String table) throws SQLException {
+        PreparedStatement preparedStatement = connection.prepareStatement(String.format(
+                "SELECT * FROM %s;",
+                table
+        ));
+        return preparedStatement.executeQuery();
+    }
+
+    public Integer selectRowsCountFrom(String table) throws SQLException {
+        PreparedStatement preparedStatement = connection.prepareStatement(String.format(
+                "SELECT count(*) FROM %s;",
+                table
+        ));
+        ResultSet resultSet = preparedStatement.executeQuery();
+        resultSet.next();
+        return resultSet.getInt(1);
+    }
+
     public ResultSet selectFromWhere(String table, String name, String value) throws SQLException {
         PreparedStatement preparedStatement = connection.prepareStatement(String.format(
-                "SELECT * FROM %s WHERE %s = ?",
+                "SELECT * FROM %s WHERE %s = ?;",
                 table,
                 name
         ));
