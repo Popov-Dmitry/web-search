@@ -118,15 +118,14 @@ public class Repository {
         return linkBetweenUrlId;
     }
 
-    public void addLinkText(String linkText, Integer linkBetweenUrlId) throws SQLException {
-        String[] words = linkText.split("[^a-zA-Zа-яА-Я0-9]+");
+    public void addLinkText(String[] linkWords, Integer linkBetweenUrlId) throws SQLException {
         PreparedStatement preparedStatement =
                 connection.prepareStatement(String.format(
                         "INSERT INTO %s (word_id, link_id) VALUES (?, ?)",
                         LINK_WORD_TABLE));
         connection.setAutoCommit(false);
 
-        for (String word : words) {
+        for (String word : linkWords) {
             ResultSet resultSet = selectFromWhere(WORD_LIST_TABLE, "word", word);
             resultSet.next();
             int wordId = resultSet.getInt(1);

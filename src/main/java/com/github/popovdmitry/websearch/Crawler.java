@@ -12,15 +12,20 @@ import java.net.URL;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class Crawler {
 
     private final Repository repository;
     private final String URL_LIST_TABLE = ConfigUtils.getProperty("URL_LIST_TABLE");
+    private final List<String> filter;
+    private final Integer delay;
 
     record Url(Integer fromUrlId, String url, String urlText) {}
 
-    public Crawler() {
+    public Crawler(String[] filter, Integer delay) {
+        this.filter = List.of(filter);
+        this.delay = delay;
         repository = new Repository();
     }
 
@@ -33,16 +38,15 @@ public class Crawler {
         }
     }
 
-    public void crawl(List<String> initialPages, Integer depth) throws IOException, SQLException {
+    public void crawl(List<String> initialPages, Integer depth) throws IOException, SQLException, InterruptedException {
         List<Url> pages = initialPages.stream().map((page) -> new Url(null, page, null)).toList();
         for(int i = 0; i < depth; i++) {
             List<Url> newPagesList = new ArrayList<>();
 
-            if (pages.size() > 10) {
-                pages = pages.stream().limit(10).toList();
-            }
-
             for(int j = 0; j < pages.size(); j++) {
+                if (Objects.nonNull(delay)) {
+                    TimeUnit.SECONDS.sleep(delay);
+                }
                 System.out.println(j + " " + pages.size());
                 URL page = new URL(pages.get(j).url());
 
@@ -59,7 +63,7 @@ public class Crawler {
                                         Jsoup.parse(document.html())
                                                 .text()
                                                 .split("[^a-zA-Zа-яА-Я0-9]+"))
-                                .filter((word) -> !word.isBlank())
+                                .filter((word) -> !word.isBlank() && !filter.contains(word))
                                 .toArray(String[]::new);
                         for (int k = 0; k < words.length; k++) {
                             int wordId = repository.addWord(words[k], 0);
@@ -70,7 +74,10 @@ public class Crawler {
                     if (Objects.nonNull(urlId) && Objects.nonNull(pages.get(j).fromUrlId())
                             && Objects.nonNull(pages.get(j).urlText())) {
                         Integer linkBetweenUrlId =  repository.addLinkBetweenUrl(pages.get(j).fromUrlId(), urlId);
-                        repository.addLinkText(pages.get(j).urlText(), linkBetweenUrlId);
+                        String[] linkWords = Arrays.stream(pages.get(j).urlText().split("[^a-zA-Zа-яА-Я0-9]+"))
+                                .filter((word) -> !filter.contains(word))
+                                .toArray(String[]::new);
+                        repository.addLinkText(linkWords, linkBetweenUrlId);
                     }
 
                     Elements links = document.select("a[href]");

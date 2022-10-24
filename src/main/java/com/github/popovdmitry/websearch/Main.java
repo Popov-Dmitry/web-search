@@ -9,13 +9,13 @@ import java.util.List;
 public class Main {
 
     public static void main(String[] args) {
-        Crawler crawler = new Crawler();
+        Crawler crawler = new Crawler(ConfigUtils.getProperty("FILTER").split(","), 2);
         try {
             crawler.crawl(
                     List.of(ConfigUtils.getProperty("PAGES").split(",")),
                     Integer.valueOf(ConfigUtils.getProperty("DEPTH"))
             );
-        } catch (IOException | SQLException e) {
+        } catch (IOException | SQLException | InterruptedException e) {
             e.printStackTrace();
         }
     }
