@@ -4,10 +4,10 @@ import com.github.popovdmitry.websearch.repository.Repository;
 import com.github.popovdmitry.websearch.repository.StatisticsRepository;
 import com.github.popovdmitry.websearch.utils.ConfigUtils;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Hashtable;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class StatisticsService {
 
@@ -77,8 +77,36 @@ public class StatisticsService {
 
     }
 
-    public void getTopNWords(Integer n) {
+    public Map<String, Integer> getTopNWords(Integer n) throws SQLException {
+        ResultSet resultSet = repository.selectAllFrom(WORD_LOCATION_TABLE);
+        Map<Integer, Integer> topNMap = new Hashtable<>();
+        while (resultSet.next()) {
+            Integer wordId = resultSet.getInt(2);
+            topNMap.put(wordId, topNMap.getOrDefault(wordId, 0) + 1);
+        }
+        Map<String, Integer> topNWordsMap = new LinkedHashMap<>();
+        topNMap.entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .limit(n)
+                .forEach((entry) -> {
+                    try {
+                        ResultSet resultSet1 = repository.selectFromWhere(WORD_LIST_TABLE, "row_id", entry.getKey().toString());
+                        resultSet1.next();
+                        String word = resultSet1.getString(2);
+                        topNWordsMap.put(word, entry.getValue());
+                        if (loggingEnable) {
+                            System.out.println(word + ", " + entry.getValue());
+                        }
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                });
+        if (dbInsertingEnable && Objects.nonNull(statisticsRepository)) {
+            statisticsRepository.addTopNWords(topNWordsMap);
+        }
 
+        return topNWordsMap;
     }
 
     public void getTopN(Integer n) {
