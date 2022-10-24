@@ -15,6 +15,7 @@ public class StatisticsRepository {
 
     private final String ROWS_COUNT_TABLE = ConfigUtils.getProperty("ROWS_COUNT_TABLE");
     private final String TOP_N_WORDS_TABLE = ConfigUtils.getProperty("TOP_N_WORDS_TABLE");
+    private final String TOP_N_DOMAINS_TABLE = ConfigUtils.getProperty("TOP_N_DOMAINS_TABLE");
 
     private final Connection connection;
 
@@ -42,6 +43,13 @@ public class StatisticsRepository {
                         "(id serial constraint top_n_words_pk primary key, word text, count int, date date);",
                 TOP_N_WORDS_TABLE));
         statement.close();
+
+        statement = connection.createStatement();
+        statement.execute(String.format(
+                "create table if not exists %s " +
+                        "(id serial constraint top_n_domains_pk primary key, domain text, count int, date date);",
+                TOP_N_DOMAINS_TABLE));
+        statement.close();
     }
 
     public void addRowsCount(Map<String, Integer> rowsCount) throws SQLException {
@@ -59,13 +67,15 @@ public class StatisticsRepository {
         preparedStatement.close();
     }
 
-    public void addTopNWords(Map<String, Integer> topNWordsMap) throws SQLException {
+    public void addTopN(Map<String, Integer> topNMap, String table) throws SQLException {
         PreparedStatement preparedStatement = connection.prepareStatement(String.format(
-                "INSERT INTO %s (word, count, date) VALUES (?, ?, ?);",
-                TOP_N_WORDS_TABLE));
+                "INSERT INTO %s (%s, count, date) VALUES (?, ?, ?);",
+                table,
+                table.equals(TOP_N_WORDS_TABLE) ? "word" : "domain")
+        );
         connection.setAutoCommit(false);
 
-        topNWordsMap.forEach((key, value) -> {
+        topNMap.forEach((key, value) -> {
             try {
                 preparedStatement.setString(1, key);
                 preparedStatement.setInt(2, value);

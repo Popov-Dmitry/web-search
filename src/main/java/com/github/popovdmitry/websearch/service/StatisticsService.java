@@ -7,6 +7,8 @@ import com.github.popovdmitry.websearch.utils.ConfigUtils;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class StatisticsService {
@@ -16,6 +18,9 @@ public class StatisticsService {
     private final String WORD_LOCATION_TABLE = ConfigUtils.getProperty("WORD_LOCATION_TABLE");
     private final String LINK_BETWEEN_URL_TABLE = ConfigUtils.getProperty("LINK_BETWEEN_URL_TABLE");
     private final String LINK_WORD_TABLE = ConfigUtils.getProperty("LINK_WORD_TABLE");
+
+    private final String TOP_N_WORDS_TABLE = ConfigUtils.getProperty("TOP_N_WORDS_TABLE");
+    private final String TOP_N_DOMAINS_TABLE = ConfigUtils.getProperty("TOP_N_DOMAINS_TABLE");
 
     private final Boolean loggingEnable;
     private final Boolean dbInsertingEnable;
@@ -73,8 +78,36 @@ public class StatisticsService {
         return rowsCount;
     }
 
-    public void getTopNDomains(Integer n) {
+    public void getTopNDomains(Integer n) throws SQLException {
+        ResultSet resultSet = repository.selectAllFrom(URL_LIST_TABLE);
+        Map<String, Integer> topNMap = new Hashtable<>();
+        while (resultSet.next()) {
+            String link = resultSet.getString(2);
+            Pattern pattern = Pattern.compile("(http)(s)?(://)([A-Za-z0-9]+)((\\.)([A-Za-z0-9]+))+");
+            Matcher matcher = pattern.matcher(link);
+            if (matcher.find()){
+                link = matcher.group();
+            } else {
+                continue;
+            }
+            topNMap.put(link, topNMap.getOrDefault(link, 0) + 1);
+        }
+        Map<String, Integer> topNDomainsMap = topNMap.entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .limit(n)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
 
+        if (loggingEnable) {
+            System.out.println("\t\t Top N Domains");
+            topNDomainsMap.forEach((key, value) -> {
+                System.out.println(key + ", " + value);
+            });
+        }
+        if (dbInsertingEnable && Objects.nonNull(statisticsRepository)) {
+            statisticsRepository.addTopN(topNDomainsMap, TOP_N_DOMAINS_TABLE);
+        }
     }
 
     public Map<String, Integer> getTopNWords(Integer n) throws SQLException {
@@ -85,6 +118,9 @@ public class StatisticsService {
             topNMap.put(wordId, topNMap.getOrDefault(wordId, 0) + 1);
         }
         Map<String, Integer> topNWordsMap = new LinkedHashMap<>();
+        if (loggingEnable) {
+            System.out.println("\t\t\t Top N Words");
+        }
         topNMap.entrySet()
                 .stream()
                 .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
@@ -103,13 +139,9 @@ public class StatisticsService {
                     }
                 });
         if (dbInsertingEnable && Objects.nonNull(statisticsRepository)) {
-            statisticsRepository.addTopNWords(topNWordsMap);
+            statisticsRepository.addTopN(topNWordsMap, TOP_N_WORDS_TABLE);
         }
 
         return topNWordsMap;
-    }
-
-    public void getTopN(Integer n) {
-
     }
 }
