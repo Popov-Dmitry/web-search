@@ -9,8 +9,8 @@ import java.util.List;
 public class Main {
 
     public static void main(String[] args) {
-        Crawler crawler = new Crawler(ConfigUtils.getProperty("FILTER").split(","), 2);
         try {
+            Crawler crawler = new Crawler(ConfigUtils.getProperty("FILTER").split(","), 2);
             crawler.crawl(
                     List.of(ConfigUtils.getProperty("PAGES").split(",")),
                     Integer.valueOf(ConfigUtils.getProperty("DEPTH"))

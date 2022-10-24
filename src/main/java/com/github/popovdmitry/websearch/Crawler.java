@@ -23,7 +23,7 @@ public class Crawler {
 
     record Url(Integer fromUrlId, String url, String urlText) {}
 
-    public Crawler(String[] filter, Integer delay) {
+    public Crawler(String[] filter, Integer delay) throws SQLException {
         this.filter = List.of(filter);
         this.delay = delay;
         repository = new Repository();
@@ -116,9 +116,6 @@ public class Crawler {
             }
             pages = newPagesList;
         }
-    }
-
-    /* 7. Инициализация таблиц в БД   */
-    public void createIndexTables() {
+        repository.close();
     }
 }

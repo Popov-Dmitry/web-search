@@ -6,23 +6,64 @@ import java.sql.*;
 
 public class Repository {
 
-    private final String DB_URL = ConfigUtils.getProperty("DB_URL");
-    private final String DB_USERNAME = ConfigUtils.getProperty("DB_USERNAME");
-    private final String DB_PASSWORD = ConfigUtils.getProperty("DB_PASSWORD");
     private final String WORD_LIST_TABLE = ConfigUtils.getProperty("WORD_LIST_TABLE");
     private final String URL_LIST_TABLE = ConfigUtils.getProperty("URL_LIST_TABLE");
     private final String WORD_LOCATION_TABLE = ConfigUtils.getProperty("WORD_LOCATION_TABLE");
     private final String LINK_BETWEEN_URL_TABLE = ConfigUtils.getProperty("LINK_BETWEEN_URL_TABLE");
     private final String LINK_WORD_TABLE = ConfigUtils.getProperty("LINK_WORD_TABLE");
 
-    private Connection connection;
+    private final Connection connection;
 
-    public Repository() {
-        try {
-            connection = DriverManager.getConnection(DB_URL, DB_USERNAME, DB_PASSWORD);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    public Repository() throws SQLException {
+        connection = DriverManager.getConnection(
+                ConfigUtils.getProperty("DB_URL"),
+                ConfigUtils.getProperty("DB_USERNAME"),
+                ConfigUtils.getProperty("DB_PASSWORD")
+        );
+        init();
+    }
+
+    private void init() throws SQLException {
+        Statement statement = connection.createStatement();
+        statement.execute(String.format(
+                "create table if not exists %s " +
+                "(row_id serial constraint wordlist_pk primary key, word text, isFiltered int);",
+                WORD_LIST_TABLE));
+        statement.close();
+
+        statement = connection.createStatement();
+        statement.execute(String.format(
+                "create table if not exists %s " +
+                "(row_id serial constraint urllist_pk primary key, url text);", URL_LIST_TABLE));
+        statement.close();
+
+        statement = connection.createStatement();
+        statement.execute(String.format(
+                "create table if not exists %s " +
+                "(row_id serial constraint wordlocation_pk primary key, " +
+                "word_id integer constraint wordlocation_wordlist_rowid_fk references word_list, " +
+                "url_id integer constraint wordlocation_urllist_rowid_fk references url_list," +
+                "location integer);",
+                WORD_LOCATION_TABLE));
+        statement.close();
+
+        statement = connection.createStatement();
+        statement.execute(String.format(
+                "create table if not exists %s " +
+                "(row_id serial not null constraint linkbetweenurl_pk primary key, " +
+                "from_url_id integer constraint linkbetweenurl_urllist_rowid_fk references url_list, " +
+                "to_url_id integer constraint linkbetweenurl_urllist_rowid_fk_2 references url_list);",
+                LINK_BETWEEN_URL_TABLE));
+        statement.close();
+
+        statement = connection.createStatement();
+        statement.execute(String.format(
+                "create table if not exists %s " +
+                "(row_id serial not null constraint linkword_pk primary key, " +
+                "word_id integer constraint linkword_wordlist_rowid_fk references word_list," +
+                "link_id integer constraint linkword_linkbetweenurl_rowid_fk references link_between_url);",
+                LINK_WORD_TABLE));
+        statement.close();
     }
 
     public void close() throws SQLException {
