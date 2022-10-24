@@ -30,6 +30,11 @@ public class Repository {
     }
 
     public Integer addWord(String word, Integer isFiltered) throws SQLException {
+        ResultSet resultSet = selectFromWhere(WORD_LIST_TABLE, "word", word);
+        if (resultSet.next()) {
+            return resultSet.getInt(1);
+        }
+        
         PreparedStatement preparedStatement =
                 connection.prepareStatement(String.format(
                         "INSERT INTO %s (word, is_filtered) VALUES (?, ?)",
@@ -45,7 +50,19 @@ public class Repository {
     }
 
     public void addWordLocation(Integer wordId, Integer urlId, Integer location) throws SQLException {
-        PreparedStatement preparedStatement =
+        PreparedStatement preparedStatement = connection.prepareStatement(String.format(
+                "SELECT * FROM %s WHERE (word_id = ? AND url_id = ? AND location = ?)",
+                WORD_LOCATION_TABLE
+        ));
+        preparedStatement.setInt(1, wordId);
+        preparedStatement.setInt(2, urlId);
+        preparedStatement.setInt(3, location);
+        ResultSet resultSet = preparedStatement.executeQuery();
+        if (resultSet.next()) {
+            return;
+        }
+
+        preparedStatement =
                 connection.prepareStatement(String.format(
                         "INSERT INTO %s (word_id, url_id, location) VALUES (?, ?, ?)",
                         WORD_LOCATION_TABLE));
@@ -57,6 +74,11 @@ public class Repository {
     }
 
     public Integer addUrl(String url) throws SQLException {
+        ResultSet resultSet = selectFromWhere(URL_LIST_TABLE, "url", url);
+        if (resultSet.next()) {
+            return resultSet.getInt(1);
+        }
+
         PreparedStatement preparedStatement =
                 connection.prepareStatement(String.format(
                         "INSERT INTO %s (url) VALUES (?)",
@@ -71,7 +93,18 @@ public class Repository {
     }
 
     public Integer addLinkBetweenUrl(Integer fromUrlId, Integer toUrlId) throws SQLException {
-        PreparedStatement preparedStatement =
+        PreparedStatement preparedStatement = connection.prepareStatement(String.format(
+                "SELECT * FROM %s WHERE (from_url_id = ? AND to_url_id = ?)",
+                LINK_BETWEEN_URL_TABLE
+        ));
+        preparedStatement.setInt(1, fromUrlId);
+        preparedStatement.setInt(2, toUrlId);
+        ResultSet resultSet = preparedStatement.executeQuery();
+        if (resultSet.next()) {
+            return resultSet.getInt(1);
+        }
+
+        preparedStatement =
                 connection.prepareStatement(String.format(
                         "INSERT INTO %s (from_url_id, to_url_id) VALUES (?, ?)",
                         LINK_BETWEEN_URL_TABLE), Statement.RETURN_GENERATED_KEYS);
@@ -92,11 +125,10 @@ public class Repository {
                         "INSERT INTO %s (word_id, link_id) VALUES (?, ?)",
                         LINK_WORD_TABLE));
         connection.setAutoCommit(false);
-//        System.out.println(Arrays.toString(words));
+
         for (String word : words) {
             ResultSet resultSet = selectFromWhere(WORD_LIST_TABLE, "word", word);
             resultSet.next();
-//            System.out.println(word);
             int wordId = resultSet.getInt(1);
             preparedStatement.setInt(1, wordId);
             preparedStatement.setInt(2, linkBetweenUrlId);
@@ -113,8 +145,14 @@ public class Repository {
     public ResultSet selectFromWhere(String table, String name, String value) throws SQLException {
         PreparedStatement preparedStatement = connection.prepareStatement(String.format(
                 "SELECT * FROM %s WHERE %s = ?",
-                table, name));
+                table,
+                name
+        ));
         preparedStatement.setString(1, value);
         return preparedStatement.executeQuery();
+    }
+
+    public boolean isExist(String table, String name, String value) throws SQLException {
+        return selectFromWhere(table, name, value).next();
     }
 }
