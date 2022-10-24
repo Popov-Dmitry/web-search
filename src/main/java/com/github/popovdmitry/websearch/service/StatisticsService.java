@@ -38,8 +38,20 @@ public class StatisticsService {
         }
     }
 
-    public void getSummary() {
+    public void close() throws SQLException {
+        if (Objects.nonNull(statisticsRepository)) {
+            statisticsRepository.close();
+        }
 
+    }
+
+    public Map<String, Map<String, Integer>> getSummary(Integer n) throws SQLException {
+        Map<String, Map<String, Integer>> summary = new Hashtable<>();
+        summary.put("rowsCount", getRowsCount());
+        summary.put("topNWords", getTopNWords(n));
+        summary.put("topNDomains", getTopNDomains(n));
+
+        return summary;
     }
 
     public Map<String, Integer> getRowsCount() throws SQLException {
@@ -78,7 +90,7 @@ public class StatisticsService {
         return rowsCount;
     }
 
-    public void getTopNDomains(Integer n) throws SQLException {
+    public Map<String, Integer> getTopNDomains(Integer n) throws SQLException {
         ResultSet resultSet = repository.selectAllFrom(URL_LIST_TABLE);
         Map<String, Integer> topNMap = new Hashtable<>();
         while (resultSet.next()) {
@@ -101,13 +113,13 @@ public class StatisticsService {
 
         if (loggingEnable) {
             System.out.println("\t\t Top N Domains");
-            topNDomainsMap.forEach((key, value) -> {
-                System.out.println(key + ", " + value);
-            });
+            topNDomainsMap.forEach((key, value) -> System.out.println(key + ", " + value));
         }
         if (dbInsertingEnable && Objects.nonNull(statisticsRepository)) {
             statisticsRepository.addTopN(topNDomainsMap, TOP_N_DOMAINS_TABLE);
         }
+
+        return topNDomainsMap;
     }
 
     public Map<String, Integer> getTopNWords(Integer n) throws SQLException {
@@ -119,7 +131,7 @@ public class StatisticsService {
         }
         Map<String, Integer> topNWordsMap = new LinkedHashMap<>();
         if (loggingEnable) {
-            System.out.println("\t\t\t Top N Words");
+            System.out.println("\t\t Top N Words");
         }
         topNMap.entrySet()
                 .stream()

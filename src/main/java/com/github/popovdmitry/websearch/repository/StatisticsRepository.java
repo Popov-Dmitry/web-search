@@ -52,6 +52,10 @@ public class StatisticsRepository {
         statement.close();
     }
 
+    public void close() throws SQLException {
+        connection.close();
+    }
+
     public void addRowsCount(Map<String, Integer> rowsCount) throws SQLException {
         PreparedStatement preparedStatement = connection.prepareStatement(String.format(
                 "INSERT INTO %s (word_list, url_list, word_location, link_between_url, link_word, date) " +

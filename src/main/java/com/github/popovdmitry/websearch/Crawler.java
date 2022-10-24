@@ -1,6 +1,7 @@
 package com.github.popovdmitry.websearch;
 
 import com.github.popovdmitry.websearch.repository.Repository;
+import com.github.popovdmitry.websearch.service.StatisticsService;
 import com.github.popovdmitry.websearch.utils.ConfigUtils;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
@@ -17,16 +18,20 @@ import java.util.concurrent.TimeUnit;
 public class Crawler {
 
     private final Repository repository;
+    private final StatisticsService statisticsService;
     private final String URL_LIST_TABLE = ConfigUtils.getProperty("URL_LIST_TABLE");
     private final List<String> filter;
     private final Integer delay;
+    private final Integer n;
 
     record Url(Integer fromUrlId, String url, String urlText) {}
 
-    public Crawler(String[] filter, Integer delay) throws SQLException {
+    public Crawler(String[] filter, Integer delay, Boolean loggingEnable, Boolean dbInsertingEnable, Integer n) throws SQLException {
         this.filter = List.of(filter);
         this.delay = delay;
-        repository = new Repository();
+        this.repository = new Repository();
+        this.statisticsService = new StatisticsService(loggingEnable, dbInsertingEnable, repository);
+        this.n = n;
     }
 
     public boolean isIndexed(String url) {
@@ -117,5 +122,7 @@ public class Crawler {
             pages = newPagesList;
         }
         repository.close();
+        statisticsService.getSummary(n);
+        statisticsService.close();
     }
 }

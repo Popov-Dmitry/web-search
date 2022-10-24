@@ -10,12 +10,18 @@ public class Main {
 
     public static void main(String[] args) {
         try {
-            Crawler crawler = new Crawler(ConfigUtils.getProperty("FILTER").split(","), 2);
+            Crawler crawler = new Crawler(
+                    ConfigUtils.getProperty("FILTER").split(","),
+                    2,
+                    true,
+                    true,
+                    20
+            );
             crawler.crawl(
                     List.of(ConfigUtils.getProperty("PAGES").split(",")),
                     Integer.valueOf(ConfigUtils.getProperty("DEPTH"))
             );
-        } catch (IOException | SQLException | InterruptedException e) {
+        } catch (SQLException | IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
