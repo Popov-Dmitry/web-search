@@ -1,16 +1,11 @@
 package com.github.popovdmitry.websearch.repository;
 
 import com.github.popovdmitry.websearch.utils.ConfigUtils;
+import com.github.popovdmitry.websearch.utils.Tables;
 
 import java.sql.*;
 
 public class Repository {
-
-    private final String WORD_LIST_TABLE = ConfigUtils.getProperty("WORD_LIST_TABLE");
-    private final String URL_LIST_TABLE = ConfigUtils.getProperty("URL_LIST_TABLE");
-    private final String WORD_LOCATION_TABLE = ConfigUtils.getProperty("WORD_LOCATION_TABLE");
-    private final String LINK_BETWEEN_URL_TABLE = ConfigUtils.getProperty("LINK_BETWEEN_URL_TABLE");
-    private final String LINK_WORD_TABLE = ConfigUtils.getProperty("LINK_WORD_TABLE");
 
     private final Connection connection;
 
@@ -28,13 +23,14 @@ public class Repository {
         statement.execute(String.format(
                 "create table if not exists %s " +
                 "(row_id serial constraint wordlist_pk primary key, word text, isFiltered int);",
-                WORD_LIST_TABLE));
+                Tables.WORD_LIST_TABLE));
         statement.close();
 
         statement = connection.createStatement();
         statement.execute(String.format(
                 "create table if not exists %s " +
-                "(row_id serial constraint urllist_pk primary key, url text);", URL_LIST_TABLE));
+                "(row_id serial constraint urllist_pk primary key, url text);",
+                Tables.URL_LIST_TABLE));
         statement.close();
 
         statement = connection.createStatement();
@@ -44,7 +40,7 @@ public class Repository {
                 "word_id integer constraint wordlocation_wordlist_rowid_fk references word_list, " +
                 "url_id integer constraint wordlocation_urllist_rowid_fk references url_list," +
                 "location integer);",
-                WORD_LOCATION_TABLE));
+                Tables.WORD_LOCATION_TABLE));
         statement.close();
 
         statement = connection.createStatement();
@@ -53,7 +49,7 @@ public class Repository {
                 "(row_id serial not null constraint linkbetweenurl_pk primary key, " +
                 "from_url_id integer constraint linkbetweenurl_urllist_rowid_fk references url_list, " +
                 "to_url_id integer constraint linkbetweenurl_urllist_rowid_fk_2 references url_list);",
-                LINK_BETWEEN_URL_TABLE));
+                Tables.LINK_BETWEEN_URL_TABLE));
         statement.close();
 
         statement = connection.createStatement();
@@ -62,7 +58,7 @@ public class Repository {
                 "(row_id serial not null constraint linkword_pk primary key, " +
                 "word_id integer constraint linkword_wordlist_rowid_fk references word_list," +
                 "link_id integer constraint linkword_linkbetweenurl_rowid_fk references link_between_url);",
-                LINK_WORD_TABLE));
+                Tables.LINK_WORD_TABLE));
         statement.close();
     }
 
@@ -71,7 +67,7 @@ public class Repository {
     }
 
     public Integer addWord(String word, Integer isFiltered) throws SQLException {
-        ResultSet resultSet = selectFromWhere(WORD_LIST_TABLE, "word", word);
+        ResultSet resultSet = selectFromWhere(Tables.WORD_LIST_TABLE, "word", word);
         if (resultSet.next()) {
             return resultSet.getInt(1);
         }
@@ -79,7 +75,7 @@ public class Repository {
         PreparedStatement preparedStatement =
                 connection.prepareStatement(String.format(
                         "INSERT INTO %s (word, is_filtered) VALUES (?, ?);",
-                        WORD_LIST_TABLE), Statement.RETURN_GENERATED_KEYS);
+                        Tables.WORD_LIST_TABLE), Statement.RETURN_GENERATED_KEYS);
         preparedStatement.setString(1, word);
         preparedStatement.setInt(2, isFiltered);
         preparedStatement.executeUpdate();
@@ -93,7 +89,7 @@ public class Repository {
     public void addWordLocation(Integer wordId, Integer urlId, Integer location) throws SQLException {
         PreparedStatement preparedStatement = connection.prepareStatement(String.format(
                 "SELECT * FROM %s WHERE (word_id = ? AND url_id = ? AND location = ?);",
-                WORD_LOCATION_TABLE
+                Tables.WORD_LOCATION_TABLE
         ));
         preparedStatement.setInt(1, wordId);
         preparedStatement.setInt(2, urlId);
@@ -106,7 +102,7 @@ public class Repository {
         preparedStatement =
                 connection.prepareStatement(String.format(
                         "INSERT INTO %s (word_id, url_id, location) VALUES (?, ?, ?);",
-                        WORD_LOCATION_TABLE));
+                        Tables.WORD_LOCATION_TABLE));
         preparedStatement.setInt(1, wordId);
         preparedStatement.setInt(2, urlId);
         preparedStatement.setInt(3, location);
@@ -115,7 +111,7 @@ public class Repository {
     }
 
     public Integer addUrl(String url) throws SQLException {
-        ResultSet resultSet = selectFromWhere(URL_LIST_TABLE, "url", url);
+        ResultSet resultSet = selectFromWhere(Tables.URL_LIST_TABLE, "url", url);
         if (resultSet.next()) {
             return resultSet.getInt(1);
         }
@@ -123,7 +119,7 @@ public class Repository {
         PreparedStatement preparedStatement =
                 connection.prepareStatement(String.format(
                         "INSERT INTO %s (url) VALUES (?);",
-                        URL_LIST_TABLE), Statement.RETURN_GENERATED_KEYS);
+                        Tables.URL_LIST_TABLE), Statement.RETURN_GENERATED_KEYS);
         preparedStatement.setString(1, url);
         preparedStatement.executeUpdate();
         ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
@@ -136,7 +132,7 @@ public class Repository {
     public Integer addLinkBetweenUrl(Integer fromUrlId, Integer toUrlId) throws SQLException {
         PreparedStatement preparedStatement = connection.prepareStatement(String.format(
                 "SELECT * FROM %s WHERE (from_url_id = ? AND to_url_id = ?);",
-                LINK_BETWEEN_URL_TABLE
+                Tables.LINK_BETWEEN_URL_TABLE
         ));
         preparedStatement.setInt(1, fromUrlId);
         preparedStatement.setInt(2, toUrlId);
@@ -148,7 +144,7 @@ public class Repository {
         preparedStatement =
                 connection.prepareStatement(String.format(
                         "INSERT INTO %s (from_url_id, to_url_id) VALUES (?, ?);",
-                        LINK_BETWEEN_URL_TABLE), Statement.RETURN_GENERATED_KEYS);
+                        Tables.LINK_BETWEEN_URL_TABLE), Statement.RETURN_GENERATED_KEYS);
         preparedStatement.setInt(1, fromUrlId);
         preparedStatement.setInt(2, toUrlId);
         preparedStatement.executeUpdate();
@@ -163,11 +159,11 @@ public class Repository {
         PreparedStatement preparedStatement =
                 connection.prepareStatement(String.format(
                         "INSERT INTO %s (word_id, link_id) VALUES (?, ?);",
-                        LINK_WORD_TABLE));
+                        Tables.LINK_WORD_TABLE));
         connection.setAutoCommit(false);
 
         for (String word : linkWords) {
-            ResultSet resultSet = selectFromWhere(WORD_LIST_TABLE, "word", word);
+            ResultSet resultSet = selectFromWhere(Tables.WORD_LIST_TABLE, "word", word);
             resultSet.next();
             int wordId = resultSet.getInt(1);
             preparedStatement.setInt(1, wordId);

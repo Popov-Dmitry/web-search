@@ -2,7 +2,7 @@ package com.github.popovdmitry.websearch;
 
 import com.github.popovdmitry.websearch.repository.Repository;
 import com.github.popovdmitry.websearch.service.StatisticsService;
-import com.github.popovdmitry.websearch.utils.ConfigUtils;
+import com.github.popovdmitry.websearch.utils.Tables;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -19,7 +19,6 @@ public class Crawler {
 
     private final Repository repository;
     private final StatisticsService statisticsService;
-    private final String URL_LIST_TABLE = ConfigUtils.getProperty("URL_LIST_TABLE");
     private final List<String> filter;
     private final Integer delay;
     private final Integer n;
@@ -36,7 +35,7 @@ public class Crawler {
 
     public boolean isIndexed(String url) {
         try {
-            return repository.isExist(URL_LIST_TABLE, "url", url);
+            return repository.isExist(Tables.URL_LIST_TABLE, "url", url);
         } catch (SQLException e) {
             e.printStackTrace();
             return true;

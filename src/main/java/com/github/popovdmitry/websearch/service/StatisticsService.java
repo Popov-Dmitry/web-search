@@ -2,7 +2,7 @@ package com.github.popovdmitry.websearch.service;
 
 import com.github.popovdmitry.websearch.repository.Repository;
 import com.github.popovdmitry.websearch.repository.StatisticsRepository;
-import com.github.popovdmitry.websearch.utils.ConfigUtils;
+import com.github.popovdmitry.websearch.utils.Tables;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -12,15 +12,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class StatisticsService {
-
-    private final String WORD_LIST_TABLE = ConfigUtils.getProperty("WORD_LIST_TABLE");
-    private final String URL_LIST_TABLE = ConfigUtils.getProperty("URL_LIST_TABLE");
-    private final String WORD_LOCATION_TABLE = ConfigUtils.getProperty("WORD_LOCATION_TABLE");
-    private final String LINK_BETWEEN_URL_TABLE = ConfigUtils.getProperty("LINK_BETWEEN_URL_TABLE");
-    private final String LINK_WORD_TABLE = ConfigUtils.getProperty("LINK_WORD_TABLE");
-
-    private final String TOP_N_WORDS_TABLE = ConfigUtils.getProperty("TOP_N_WORDS_TABLE");
-    private final String TOP_N_DOMAINS_TABLE = ConfigUtils.getProperty("TOP_N_DOMAINS_TABLE");
 
     private final Boolean loggingEnable;
     private final Boolean dbInsertingEnable;
@@ -56,16 +47,16 @@ public class StatisticsService {
 
     public Map<String, Integer> getRowsCount() throws SQLException {
         Map<String, Integer> rowsCount = new Hashtable<>();
-        Integer wordListRows = repository.selectRowsCountFrom(WORD_LIST_TABLE);
-        Integer urlListRows = repository.selectRowsCountFrom(URL_LIST_TABLE);
-        Integer wordLocationRows = repository.selectRowsCountFrom(WORD_LOCATION_TABLE);
-        Integer linkBetweenUrlRows = repository.selectRowsCountFrom(LINK_BETWEEN_URL_TABLE);
-        Integer linkWordRows = repository.selectRowsCountFrom(LINK_WORD_TABLE);
-        rowsCount.put(WORD_LIST_TABLE, wordListRows);
-        rowsCount.put(URL_LIST_TABLE, urlListRows);
-        rowsCount.put(WORD_LOCATION_TABLE, wordLocationRows);
-        rowsCount.put(LINK_BETWEEN_URL_TABLE, linkBetweenUrlRows);
-        rowsCount.put(LINK_WORD_TABLE, linkWordRows);
+        Integer wordListRows = repository.selectRowsCountFrom(Tables.WORD_LIST_TABLE);
+        Integer urlListRows = repository.selectRowsCountFrom(Tables.URL_LIST_TABLE);
+        Integer wordLocationRows = repository.selectRowsCountFrom(Tables.WORD_LOCATION_TABLE);
+        Integer linkBetweenUrlRows = repository.selectRowsCountFrom(Tables.LINK_BETWEEN_URL_TABLE);
+        Integer linkWordRows = repository.selectRowsCountFrom(Tables.LINK_WORD_TABLE);
+        rowsCount.put(Tables.WORD_LIST_TABLE, wordListRows);
+        rowsCount.put(Tables.URL_LIST_TABLE, urlListRows);
+        rowsCount.put(Tables.WORD_LOCATION_TABLE, wordLocationRows);
+        rowsCount.put(Tables.LINK_BETWEEN_URL_TABLE, linkBetweenUrlRows);
+        rowsCount.put(Tables.LINK_WORD_TABLE, linkWordRows);
 
         if (loggingEnable) {
             System.out.printf("""
@@ -76,11 +67,11 @@ public class StatisticsService {
                             %s\t%d
                             %s\t\t\t%d
                             """,
-                    WORD_LIST_TABLE, wordListRows,
-                    URL_LIST_TABLE, urlListRows,
-                    WORD_LOCATION_TABLE, wordLocationRows,
-                    LINK_BETWEEN_URL_TABLE, linkBetweenUrlRows,
-                    LINK_WORD_TABLE, linkWordRows
+                    Tables.WORD_LIST_TABLE, wordListRows,
+                    Tables.URL_LIST_TABLE, urlListRows,
+                    Tables.WORD_LOCATION_TABLE, wordLocationRows,
+                    Tables.LINK_BETWEEN_URL_TABLE, linkBetweenUrlRows,
+                    Tables.LINK_WORD_TABLE, linkWordRows
                     );
         }
         if (dbInsertingEnable && Objects.nonNull(statisticsRepository)) {
@@ -91,7 +82,7 @@ public class StatisticsService {
     }
 
     public Map<String, Integer> getTopNDomains(Integer n) throws SQLException {
-        ResultSet resultSet = repository.selectAllFrom(URL_LIST_TABLE);
+        ResultSet resultSet = repository.selectAllFrom(Tables.URL_LIST_TABLE);
         Map<String, Integer> topNMap = new Hashtable<>();
         while (resultSet.next()) {
             String link = resultSet.getString(2);
@@ -116,14 +107,14 @@ public class StatisticsService {
             topNDomainsMap.forEach((key, value) -> System.out.println(key + ", " + value));
         }
         if (dbInsertingEnable && Objects.nonNull(statisticsRepository)) {
-            statisticsRepository.addTopN(topNDomainsMap, TOP_N_DOMAINS_TABLE);
+            statisticsRepository.addTopN(topNDomainsMap, Tables.TOP_N_DOMAINS_TABLE);
         }
 
         return topNDomainsMap;
     }
 
     public Map<String, Integer> getTopNWords(Integer n) throws SQLException {
-        ResultSet resultSet = repository.selectAllFrom(WORD_LOCATION_TABLE);
+        ResultSet resultSet = repository.selectAllFrom(Tables.WORD_LOCATION_TABLE);
         Map<Integer, Integer> topNMap = new Hashtable<>();
         while (resultSet.next()) {
             Integer wordId = resultSet.getInt(2);
@@ -139,7 +130,11 @@ public class StatisticsService {
                 .limit(n)
                 .forEach((entry) -> {
                     try {
-                        ResultSet resultSet1 = repository.selectFromWhere(WORD_LIST_TABLE, "row_id", entry.getKey().toString());
+                        ResultSet resultSet1 = repository.selectFromWhere(
+                                Tables.WORD_LIST_TABLE,
+                                "row_id",
+                                entry.getKey().toString()
+                        );
                         resultSet1.next();
                         String word = resultSet1.getString(2);
                         topNWordsMap.put(word, entry.getValue());
@@ -151,7 +146,7 @@ public class StatisticsService {
                     }
                 });
         if (dbInsertingEnable && Objects.nonNull(statisticsRepository)) {
-            statisticsRepository.addTopN(topNWordsMap, TOP_N_WORDS_TABLE);
+            statisticsRepository.addTopN(topNWordsMap, Tables.TOP_N_WORDS_TABLE);
         }
 
         return topNWordsMap;
