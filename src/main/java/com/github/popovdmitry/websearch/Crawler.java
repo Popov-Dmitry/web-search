@@ -9,6 +9,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 import java.sql.SQLException;
@@ -66,7 +67,13 @@ public class Crawler {
                 if (Objects.nonNull(delay)) {
                     TimeUnit.SECONDS.sleep(delay);
                 }
-                URL url = new URL(page.url());
+                URL url;
+                try {
+                     url = new URL(page.url());
+                } catch (MalformedURLException e) {
+                    continue;
+                }
+
 
                 Document document = null;
                 try {
@@ -100,6 +107,7 @@ public class Crawler {
                     }
 
                     Elements links = document.select("a[href]");
+                    URL finalUrl = url;
                     links.stream()
                             .filter((link)
                                     -> link.hasText()
@@ -110,15 +118,15 @@ public class Crawler {
                                 String unifiedLink;
                                 if (link.attr("href").startsWith("/")) {
                                     if (!link.attr("href").equals("/")) {
-                                        if (url.getPath().equals(link.attr("href"))
-                                                || (url.getPath() + "/").equals(link.attr("href"))) {
-                                            unifiedLink = url.toString();
+                                        if (finalUrl.getPath().equals(link.attr("href"))
+                                                || (finalUrl.getPath() + "/").equals(link.attr("href"))) {
+                                            unifiedLink = finalUrl.toString();
                                         } else {
-                                            unifiedLink = url + link.attr("href");
+                                            unifiedLink = finalUrl + link.attr("href");
                                         }
 
                                     } else {
-                                        unifiedLink = url.toString();
+                                        unifiedLink = finalUrl.toString();
                                     }
                                 } else {
                                     unifiedLink = link.attr("href");
@@ -144,8 +152,8 @@ public class Crawler {
             }
             pages = newPagesList;
         }
-        repository.close();
         statisticsService.getSummary(n);
+        repository.close();
         statisticsService.close();
     }
 }
