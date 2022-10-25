@@ -5,11 +5,11 @@ import com.github.popovdmitry.websearch.utils.Tables;
 
 import java.sql.*;
 
-public class Repository {
+public class CrawlerRepository {
 
     private final Connection connection;
 
-    public Repository() throws SQLException {
+    public CrawlerRepository() throws SQLException {
         connection = DriverManager.getConnection(
                 ConfigUtils.getProperty("DB.URL"),
                 ConfigUtils.getProperty("DB.USERNAME"),

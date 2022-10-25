@@ -1,6 +1,6 @@
 package com.github.popovdmitry.websearch.service;
 
-import com.github.popovdmitry.websearch.repository.Repository;
+import com.github.popovdmitry.websearch.repository.CrawlerRepository;
 import com.github.popovdmitry.websearch.repository.StatisticsRepository;
 import com.github.popovdmitry.websearch.utils.Tables;
 
@@ -15,13 +15,13 @@ public class StatisticsService {
 
     private final Boolean loggingEnable;
     private final Boolean dbInsertingEnable;
-    private final Repository repository;
+    private final CrawlerRepository crawlerRepository;
     private final StatisticsRepository statisticsRepository;
 
-    public StatisticsService(Boolean loggingEnable, Boolean dbInsertingEnable, Repository repository) throws SQLException {
+    public StatisticsService(Boolean loggingEnable, Boolean dbInsertingEnable, CrawlerRepository crawlerRepository) throws SQLException {
         this.loggingEnable = loggingEnable;
         this.dbInsertingEnable = dbInsertingEnable;
-        this.repository = repository;
+        this.crawlerRepository = crawlerRepository;
         if (dbInsertingEnable) {
             statisticsRepository = new StatisticsRepository();
         } else {
@@ -47,11 +47,11 @@ public class StatisticsService {
 
     public Map<String, Integer> getRowsCount() throws SQLException {
         Map<String, Integer> rowsCount = new Hashtable<>();
-        Integer wordListRows = repository.selectRowsCountFrom(Tables.WORD_LIST_TABLE);
-        Integer urlListRows = repository.selectRowsCountFrom(Tables.URL_LIST_TABLE);
-        Integer wordLocationRows = repository.selectRowsCountFrom(Tables.WORD_LOCATION_TABLE);
-        Integer linkBetweenUrlRows = repository.selectRowsCountFrom(Tables.LINK_BETWEEN_URL_TABLE);
-        Integer linkWordRows = repository.selectRowsCountFrom(Tables.LINK_WORD_TABLE);
+        Integer wordListRows = crawlerRepository.selectRowsCountFrom(Tables.WORD_LIST_TABLE);
+        Integer urlListRows = crawlerRepository.selectRowsCountFrom(Tables.URL_LIST_TABLE);
+        Integer wordLocationRows = crawlerRepository.selectRowsCountFrom(Tables.WORD_LOCATION_TABLE);
+        Integer linkBetweenUrlRows = crawlerRepository.selectRowsCountFrom(Tables.LINK_BETWEEN_URL_TABLE);
+        Integer linkWordRows = crawlerRepository.selectRowsCountFrom(Tables.LINK_WORD_TABLE);
         rowsCount.put(Tables.WORD_LIST_TABLE, wordListRows);
         rowsCount.put(Tables.URL_LIST_TABLE, urlListRows);
         rowsCount.put(Tables.WORD_LOCATION_TABLE, wordLocationRows);
@@ -82,7 +82,7 @@ public class StatisticsService {
     }
 
     public Map<String, Integer> getTopNDomains(Integer n) throws SQLException {
-        ResultSet resultSet = repository.selectAllFrom(Tables.URL_LIST_TABLE);
+        ResultSet resultSet = crawlerRepository.selectAllFrom(Tables.URL_LIST_TABLE);
         Map<String, Integer> topNMap = new Hashtable<>();
         while (resultSet.next()) {
             String link = resultSet.getString(2);
@@ -114,7 +114,7 @@ public class StatisticsService {
     }
 
     public Map<String, Integer> getTopNWords(Integer n) throws SQLException {
-        ResultSet resultSet = repository.selectAllFrom(Tables.WORD_LOCATION_TABLE);
+        ResultSet resultSet = crawlerRepository.selectAllFrom(Tables.WORD_LOCATION_TABLE);
         Map<Integer, Integer> topNMap = new Hashtable<>();
         while (resultSet.next()) {
             Integer wordId = resultSet.getInt(2);
@@ -130,7 +130,7 @@ public class StatisticsService {
                 .limit(n)
                 .forEach((entry) -> {
                     try {
-                        ResultSet resultSet1 = repository.selectFromWhere(
+                        ResultSet resultSet1 = crawlerRepository.selectFromWhere(
                                 Tables.WORD_LIST_TABLE,
                                 "row_id",
                                 entry.getKey()
@@ -153,7 +153,7 @@ public class StatisticsService {
     }
 
     public void collectWordsCount(Integer pagesProcessedCount) throws SQLException {
-        Integer wordsCount = repository.selectRowsCountFrom(Tables.WORD_LIST_TABLE);
+        Integer wordsCount = crawlerRepository.selectRowsCountFrom(Tables.WORD_LIST_TABLE);
         if (loggingEnable) {
             System.out.printf("Processed %d pages and %d words%n", pagesProcessedCount, wordsCount);
         }
@@ -163,7 +163,7 @@ public class StatisticsService {
     }
 
     public void collectLinkBetweenUrlCount(Integer pagesProcessedCount) throws SQLException {
-        Integer linksBetweenUrlCount = repository.selectRowsCountFrom(Tables.LINK_BETWEEN_URL_TABLE);
+        Integer linksBetweenUrlCount = crawlerRepository.selectRowsCountFrom(Tables.LINK_BETWEEN_URL_TABLE);
         if (loggingEnable) {
             System.out.printf("Processed %d pages and %d links between url%n", pagesProcessedCount, linksBetweenUrlCount);
         }

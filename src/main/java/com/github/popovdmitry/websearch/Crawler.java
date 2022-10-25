@@ -1,6 +1,6 @@
 package com.github.popovdmitry.websearch;
 
-import com.github.popovdmitry.websearch.repository.Repository;
+import com.github.popovdmitry.websearch.repository.CrawlerRepository;
 import com.github.popovdmitry.websearch.service.StatisticsService;
 import com.github.popovdmitry.websearch.utils.Tables;
 import org.jsoup.HttpStatusException;
@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Crawler {
 
-    private final Repository repository;
+    private final CrawlerRepository crawlerRepository;
     private final StatisticsService statisticsService;
     private final List<String> filter;
     private final Integer delay;
@@ -33,8 +33,8 @@ public class Crawler {
         this.filter = List.of(filter);
         this.pagesLimit = pagesLimit;
         this.delay = delay;
-        this.repository = new Repository();
-        this.statisticsService = new StatisticsService(loggingEnable, dbInsertingEnable, repository);
+        this.crawlerRepository = new CrawlerRepository();
+        this.statisticsService = new StatisticsService(loggingEnable, dbInsertingEnable, crawlerRepository);
         this.n = n;
         if (statisticsCollectionIntervalPages < 1) {
             this.statisticsCollectionIntervalPages = null;
@@ -45,7 +45,7 @@ public class Crawler {
 
     public boolean isIndexed(String url) {
         try {
-            return repository.isExist(Tables.URL_LIST_TABLE, "url", url);
+            return crawlerRepository.isExist(Tables.URL_LIST_TABLE, "url", url);
         } catch (SQLException e) {
             e.printStackTrace();
             return true;
@@ -82,7 +82,7 @@ public class Crawler {
                 }
 
                 if (Objects.nonNull(document)) {
-                    Integer urlId = repository.addUrl(url.toString());
+                    Integer urlId = crawlerRepository.addUrl(url.toString());
 
                     if (Objects.nonNull(urlId)) {
                         String[] words = Arrays.stream(
@@ -92,22 +92,21 @@ public class Crawler {
                                 .filter((word) -> !word.isBlank() && !filter.contains(word))
                                 .toArray(String[]::new);
                         for (int k = 0; k < words.length; k++) {
-                            int wordId = repository.addWord(words[k], 0);
-                            repository.addWordLocation(wordId, urlId, k);
+                            int wordId = crawlerRepository.addWord(words[k], 0);
+                            crawlerRepository.addWordLocation(wordId, urlId, k);
                         }
                     }
 
                     if (Objects.nonNull(urlId) && Objects.nonNull(page.fromUrlId())
                             && Objects.nonNull(page.urlText())) {
-                        Integer linkBetweenUrlId = repository.addLinkBetweenUrl(page.fromUrlId(), urlId);
+                        Integer linkBetweenUrlId = crawlerRepository.addLinkBetweenUrl(page.fromUrlId(), urlId);
                         String[] linkWords = Arrays.stream(page.urlText().split("[^a-zA-Zа-яА-Я0-9]+"))
                                 .filter((word) -> !filter.contains(word))
                                 .toArray(String[]::new);
-                        repository.addLinkText(linkWords, linkBetweenUrlId);
+                        crawlerRepository.addLinkText(linkWords, linkBetweenUrlId);
                     }
 
                     Elements links = document.select("a[href]");
-                    URL finalUrl = url;
                     links.stream()
                             .filter((link)
                                     -> link.hasText()
@@ -118,15 +117,15 @@ public class Crawler {
                                 String unifiedLink;
                                 if (link.attr("href").startsWith("/")) {
                                     if (!link.attr("href").equals("/")) {
-                                        if (finalUrl.getPath().equals(link.attr("href"))
-                                                || (finalUrl.getPath() + "/").equals(link.attr("href"))) {
-                                            unifiedLink = finalUrl.toString();
+                                        if (url.getPath().equals(link.attr("href"))
+                                                || (url.getPath() + "/").equals(link.attr("href"))) {
+                                            unifiedLink = url.toString();
                                         } else {
-                                            unifiedLink = finalUrl + link.attr("href");
+                                            unifiedLink = url + link.attr("href");
                                         }
 
                                     } else {
-                                        unifiedLink = finalUrl.toString();
+                                        unifiedLink = url.toString();
                                     }
                                 } else {
                                     unifiedLink = link.attr("href");
@@ -153,7 +152,7 @@ public class Crawler {
             pages = newPagesList;
         }
         statisticsService.getSummary(n);
-        repository.close();
+        crawlerRepository.close();
         statisticsService.close();
     }
 }
