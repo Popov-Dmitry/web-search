@@ -1,5 +1,6 @@
 package com.github.popovdmitry.websearch;
 
+import com.github.popovdmitry.websearch.service.CrawlerService;
 import com.github.popovdmitry.websearch.utils.ConfigUtils;
 
 import java.io.IOException;
@@ -9,7 +10,7 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) {
         try {
-            Crawler crawler = new Crawler(
+            CrawlerService crawlerService = new CrawlerService(
                     ConfigUtils.getProperty("CRAWLER.FILTER").split(","),
                     ConfigUtils.getIntegerProperty("CRAWLER.PAGES_LIMIT"),
                     ConfigUtils.getIntegerProperty("CRAWLER.DELAY"),
@@ -18,7 +19,7 @@ public class Main {
                     ConfigUtils.getIntegerProperty("CRAWLER.TOP_N"),
                     ConfigUtils.getIntegerProperty("CRAWLER.STATISTICS_COLLECTION_INTERVAL_PAGES")
             );
-            crawler.crawl(
+            crawlerService.crawl(
                     List.of(ConfigUtils.getProperty("CRAWLER.PAGES").split(",")),
                     Integer.valueOf(ConfigUtils.getProperty("CRAWLER.DEPTH"))
             );

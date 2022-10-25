@@ -1,7 +1,6 @@
-package com.github.popovdmitry.websearch;
+package com.github.popovdmitry.websearch.service;
 
 import com.github.popovdmitry.websearch.repository.CrawlerRepository;
-import com.github.popovdmitry.websearch.service.StatisticsService;
 import com.github.popovdmitry.websearch.utils.Tables;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
@@ -16,7 +15,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-public class Crawler {
+public class CrawlerService {
 
     private final CrawlerRepository crawlerRepository;
     private final StatisticsService statisticsService;
@@ -28,8 +27,8 @@ public class Crawler {
 
     record Url(Integer fromUrlId, String url, String urlText) {}
 
-    public Crawler(String[] filter, Integer pagesLimit, Integer delay, Boolean loggingEnable,
-                   Boolean dbInsertingEnable, Integer n, Integer statisticsCollectionIntervalPages) throws SQLException {
+    public CrawlerService(String[] filter, Integer pagesLimit, Integer delay, Boolean loggingEnable,
+                          Boolean dbInsertingEnable, Integer n, Integer statisticsCollectionIntervalPages) throws SQLException {
         this.filter = List.of(filter);
         this.pagesLimit = pagesLimit;
         this.delay = delay;
