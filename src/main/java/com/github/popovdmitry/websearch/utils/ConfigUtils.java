@@ -21,4 +21,12 @@ public class ConfigUtils {
     public static String getProperty(String key) {
         return properties.getProperty(key);
     }
+
+    public static Integer getIntegerProperty(String key) {
+        return Integer.parseInt(properties.getProperty(key));
+    }
+
+    public static Boolean getBooleanProperty(String key) {
+        return Boolean.parseBoolean(properties.getProperty(key));
+    }
 }

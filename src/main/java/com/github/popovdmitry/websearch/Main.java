@@ -11,12 +11,12 @@ public class Main {
         try {
             Crawler crawler = new Crawler(
                     ConfigUtils.getProperty("FILTER").split(","),
-                    100,
-                    2,
-                    true,
-                    true,
-                    20,
-                    10
+                    ConfigUtils.getIntegerProperty("PAGES_LIMIT"),
+                    ConfigUtils.getIntegerProperty("DELAY"),
+                    ConfigUtils.getBooleanProperty("LOGGING_ENABLE"),
+                    ConfigUtils.getBooleanProperty("DB_INSERTING_ENABLE"),
+                    ConfigUtils.getIntegerProperty("TOP_N"),
+                    ConfigUtils.getIntegerProperty("STATISTICS_COLLECTION_INTERVAL_PAGES")
             );
             crawler.crawl(
                     List.of(ConfigUtils.getProperty("PAGES").split(",")),
