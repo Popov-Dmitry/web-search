@@ -10,17 +10,17 @@ public class Main {
     public static void main(String[] args) {
         try {
             Crawler crawler = new Crawler(
-                    ConfigUtils.getProperty("FILTER").split(","),
-                    ConfigUtils.getIntegerProperty("PAGES_LIMIT"),
-                    ConfigUtils.getIntegerProperty("DELAY"),
-                    ConfigUtils.getBooleanProperty("LOGGING_ENABLE"),
-                    ConfigUtils.getBooleanProperty("DB_INSERTING_ENABLE"),
-                    ConfigUtils.getIntegerProperty("TOP_N"),
-                    ConfigUtils.getIntegerProperty("STATISTICS_COLLECTION_INTERVAL_PAGES")
+                    ConfigUtils.getProperty("CRAWLER.FILTER").split(","),
+                    ConfigUtils.getIntegerProperty("CRAWLER.PAGES_LIMIT"),
+                    ConfigUtils.getIntegerProperty("CRAWLER.DELAY"),
+                    ConfigUtils.getBooleanProperty("CRAWLER.LOGGING_ENABLE"),
+                    ConfigUtils.getBooleanProperty("CRAWLER.DB_INSERTING_ENABLE"),
+                    ConfigUtils.getIntegerProperty("CRAWLER.TOP_N"),
+                    ConfigUtils.getIntegerProperty("CRAWLER.STATISTICS_COLLECTION_INTERVAL_PAGES")
             );
             crawler.crawl(
-                    List.of(ConfigUtils.getProperty("PAGES").split(",")),
-                    Integer.valueOf(ConfigUtils.getProperty("DEPTH"))
+                    List.of(ConfigUtils.getProperty("CRAWLER.PAGES").split(",")),
+                    Integer.valueOf(ConfigUtils.getProperty("CRAWLER.DEPTH"))
             );
         } catch (SQLException | IOException | InterruptedException e) {
             e.printStackTrace();

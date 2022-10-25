@@ -12,9 +12,9 @@ public class StatisticsRepository {
 
     public StatisticsRepository() throws SQLException {
         connection = DriverManager.getConnection(
-                ConfigUtils.getProperty("DB_URL"),
-                ConfigUtils.getProperty("DB_USERNAME"),
-                ConfigUtils.getProperty("DB_PASSWORD")
+                ConfigUtils.getProperty("DB.URL"),
+                ConfigUtils.getProperty("DB.USERNAME"),
+                ConfigUtils.getProperty("DB.PASSWORD")
         );
         init();
     }
