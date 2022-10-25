@@ -1,26 +1,19 @@
 package com.github.popovdmitry.websearch.repository;
 
-import com.github.popovdmitry.websearch.utils.ConfigUtils;
 import com.github.popovdmitry.websearch.utils.Tables;
 
 import java.sql.*;
 import java.util.Map;
 
-public class StatisticsRepository {
-
-    private final Connection connection;
+public class StatisticsRepository extends Repository {
 
     public StatisticsRepository() throws SQLException {
-        connection = DriverManager.getConnection(
-                ConfigUtils.getProperty("DB.URL"),
-                ConfigUtils.getProperty("DB.USERNAME"),
-                ConfigUtils.getProperty("DB.PASSWORD")
-        );
+        super();
         init();
     }
 
     private void init() throws SQLException {
-        Statement statement = connection.createStatement();
+        Statement statement = getConnection().createStatement();
         statement.execute(String.format(
                 "create table if not exists %s " +
                         "(id serial constraint rows_count_pk primary key, word_list int, url_list int, " +
@@ -28,28 +21,28 @@ public class StatisticsRepository {
                 Tables.ROWS_COUNT_TABLE));
         statement.close();
 
-        statement = connection.createStatement();
+        statement = getConnection().createStatement();
         statement.execute(String.format(
                 "create table if not exists %s " +
                         "(id serial constraint top_n_words_pk primary key, word text, count int, date date);",
                 Tables.TOP_N_WORDS_TABLE));
         statement.close();
 
-        statement = connection.createStatement();
+        statement = getConnection().createStatement();
         statement.execute(String.format(
                 "create table if not exists %s " +
                         "(id serial constraint top_n_domains_pk primary key, domain text, count int, date date);",
                 Tables.TOP_N_DOMAINS_TABLE));
         statement.close();
 
-        statement = connection.createStatement();
+        statement = getConnection().createStatement();
         statement.execute(String.format(
                 "create table if not exists %s " +
                         "(id serial constraint words_count_pk primary key, pages_processed int, count int, date date);",
                 Tables.WORDS_COUNT_TABLE));
         statement.close();
 
-        statement = connection.createStatement();
+        statement = getConnection().createStatement();
         statement.execute(String.format(
                 "create table if not exists %s " +
                         "(id serial constraint link_between_count_pk primary key, pages_processed int, count int, date date);",
@@ -57,12 +50,8 @@ public class StatisticsRepository {
         statement.close();
     }
 
-    public void close() throws SQLException {
-        connection.close();
-    }
-
     public void addRowsCount(Map<String, Integer> rowsCount) throws SQLException {
-        PreparedStatement preparedStatement = connection.prepareStatement(String.format(
+        PreparedStatement preparedStatement = getConnection().prepareStatement(String.format(
                 "INSERT INTO %s (word_list, url_list, word_location, link_between_url, link_word, date) " +
                         "VALUES (?, ?, ?, ?, ?, ?);",
                 Tables.ROWS_COUNT_TABLE));
@@ -77,7 +66,7 @@ public class StatisticsRepository {
     }
 
     public void addRowsCount(Integer pagesProcessedCount, Integer rowsCount, String table) throws SQLException {
-        PreparedStatement preparedStatement = connection.prepareStatement(String.format(
+        PreparedStatement preparedStatement = getConnection().prepareStatement(String.format(
                 "INSERT INTO %s (pages_processed, count, date) VALUES (?, ?, ?);",
                 table));
         preparedStatement.setInt(1, pagesProcessedCount);
@@ -88,12 +77,12 @@ public class StatisticsRepository {
     }
 
     public void addTopN(Map<String, Integer> topNMap, String table) throws SQLException {
-        PreparedStatement preparedStatement = connection.prepareStatement(String.format(
+        PreparedStatement preparedStatement = getConnection().prepareStatement(String.format(
                 "INSERT INTO %s (%s, count, date) VALUES (?, ?, ?);",
                 table,
                 table.equals(Tables.TOP_N_WORDS_TABLE) ? "word" : "domain")
         );
-        connection.setAutoCommit(false);
+        getConnection().setAutoCommit(false);
 
         topNMap.forEach((key, value) -> {
             try {
@@ -105,8 +94,8 @@ public class StatisticsRepository {
                 e.printStackTrace();
             }
         });
-        connection.commit();
-        connection.setAutoCommit(true);
+        getConnection().commit();
+        getConnection().setAutoCommit(true);
 
         preparedStatement.executeBatch();
         preparedStatement.close();
