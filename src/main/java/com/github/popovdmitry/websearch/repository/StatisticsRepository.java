@@ -41,6 +41,20 @@ public class StatisticsRepository {
                         "(id serial constraint top_n_domains_pk primary key, domain text, count int, date date);",
                 Tables.TOP_N_DOMAINS_TABLE));
         statement.close();
+
+        statement = connection.createStatement();
+        statement.execute(String.format(
+                "create table if not exists %s " +
+                        "(id serial constraint words_count_pk primary key, pages_processed int, count int, date date);",
+                Tables.WORDS_COUNT_TABLE));
+        statement.close();
+
+        statement = connection.createStatement();
+        statement.execute(String.format(
+                "create table if not exists %s " +
+                        "(id serial constraint link_between_count_pk primary key, pages_processed int, count int, date date);",
+                Tables.LINK_BETWEEN_URL_COUNT_TABLE));
+        statement.close();
     }
 
     public void close() throws SQLException {
@@ -58,6 +72,17 @@ public class StatisticsRepository {
         preparedStatement.setInt(4, rowsCount.get(Tables.LINK_BETWEEN_URL_TABLE));
         preparedStatement.setInt(5, rowsCount.get(Tables.LINK_WORD_TABLE));
         preparedStatement.setDate(6, new Date(new java.util.Date().getTime()));
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+    }
+
+    public void addRowsCount(Integer pagesProcessedCount, Integer rowsCount, String table) throws SQLException {
+        PreparedStatement preparedStatement = connection.prepareStatement(String.format(
+                "INSERT INTO %s (pages_processed, count, date) VALUES (?, ?, ?);",
+                table));
+        preparedStatement.setInt(1, pagesProcessedCount);
+        preparedStatement.setInt(2, rowsCount);
+        preparedStatement.setDate(3, new Date(new java.util.Date().getTime()));
         preparedStatement.executeUpdate();
         preparedStatement.close();
     }

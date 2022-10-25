@@ -133,7 +133,7 @@ public class StatisticsService {
                         ResultSet resultSet1 = repository.selectFromWhere(
                                 Tables.WORD_LIST_TABLE,
                                 "row_id",
-                                entry.getKey().toString()
+                                entry.getKey()
                         );
                         resultSet1.next();
                         String word = resultSet1.getString(2);
@@ -150,5 +150,30 @@ public class StatisticsService {
         }
 
         return topNWordsMap;
+    }
+
+    public void collectWordsCount(Integer pagesProcessedCount) throws SQLException {
+        Integer wordsCount = repository.selectRowsCountFrom(Tables.WORD_LIST_TABLE);
+        if (loggingEnable) {
+            System.out.printf("Processed %d pages and %d words%n", pagesProcessedCount, wordsCount);
+        }
+        if (dbInsertingEnable && Objects.nonNull(statisticsRepository)) {
+            statisticsRepository.addRowsCount(pagesProcessedCount, wordsCount, Tables.WORDS_COUNT_TABLE);
+        }
+    }
+
+    public void collectLinkBetweenUrlCount(Integer pagesProcessedCount) throws SQLException {
+        Integer linksBetweenUrlCount = repository.selectRowsCountFrom(Tables.LINK_BETWEEN_URL_TABLE);
+        if (loggingEnable) {
+            System.out.printf("Processed %d pages and %d links between url%n", pagesProcessedCount, linksBetweenUrlCount);
+        }
+        if (dbInsertingEnable && Objects.nonNull(statisticsRepository)) {
+            statisticsRepository.addRowsCount(pagesProcessedCount, linksBetweenUrlCount, Tables.LINK_BETWEEN_URL_COUNT_TABLE);
+        }
+    }
+
+    public void collectRowsCountStatistics(Integer pagesProcessedCount) throws SQLException {
+        collectWordsCount(pagesProcessedCount);
+        collectLinkBetweenUrlCount(pagesProcessedCount);
     }
 }

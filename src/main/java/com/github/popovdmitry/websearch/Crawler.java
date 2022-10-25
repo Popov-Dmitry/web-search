@@ -22,15 +22,24 @@ public class Crawler {
     private final List<String> filter;
     private final Integer delay;
     private final Integer n;
+    private final Integer statisticsCollectionIntervalPages;
+    private final Integer pagesLimit;
 
     record Url(Integer fromUrlId, String url, String urlText) {}
 
-    public Crawler(String[] filter, Integer delay, Boolean loggingEnable, Boolean dbInsertingEnable, Integer n) throws SQLException {
+    public Crawler(String[] filter, Integer pagesLimit, Integer delay, Boolean loggingEnable,
+                   Boolean dbInsertingEnable, Integer n, Integer statisticsCollectionIntervalPages) throws SQLException {
         this.filter = List.of(filter);
+        this.pagesLimit = pagesLimit;
         this.delay = delay;
         this.repository = new Repository();
         this.statisticsService = new StatisticsService(loggingEnable, dbInsertingEnable, repository);
         this.n = n;
+        if (statisticsCollectionIntervalPages < 1) {
+            this.statisticsCollectionIntervalPages = null;
+        } else {
+            this.statisticsCollectionIntervalPages = statisticsCollectionIntervalPages;
+        }
     }
 
     public boolean isIndexed(String url) {
@@ -43,24 +52,30 @@ public class Crawler {
     }
 
     public void crawl(List<String> initialPages, Integer depth) throws IOException, SQLException, InterruptedException {
-        List<Url> pages = initialPages.stream().map((page) -> new Url(null, page, null)).toList();
+        List<Url> pages = initialPages.stream()
+                .map((page) -> new Url(null, page, null))
+                .toList();
+        int pagesProcessedCount = 0;
         for(int i = 0; i < depth; i++) {
             List<Url> newPagesList = new ArrayList<>();
+            if (Objects.nonNull(pagesLimit) && pages.size() > pagesLimit) {
+                pages = pages.stream().limit(pagesLimit).toList();
+            }
 
-            for(int j = 0; j < pages.size(); j++) {
+            for (Url page : pages) {
                 if (Objects.nonNull(delay)) {
                     TimeUnit.SECONDS.sleep(delay);
                 }
-                System.out.println(j + " " + pages.size());
-                URL page = new URL(pages.get(j).url());
+                URL url = new URL(page.url());
 
                 Document document = null;
                 try {
-                    document = Jsoup.connect(pages.get(j).url()).get();
-                } catch (HttpStatusException ignored) {}
+                    document = Jsoup.connect(page.url()).get();
+                } catch (HttpStatusException ignored) {
+                }
 
                 if (Objects.nonNull(document)) {
-                    Integer urlId = repository.addUrl(page.toString());
+                    Integer urlId = repository.addUrl(url.toString());
 
                     if (Objects.nonNull(urlId)) {
                         String[] words = Arrays.stream(
@@ -75,10 +90,10 @@ public class Crawler {
                         }
                     }
 
-                    if (Objects.nonNull(urlId) && Objects.nonNull(pages.get(j).fromUrlId())
-                            && Objects.nonNull(pages.get(j).urlText())) {
-                        Integer linkBetweenUrlId =  repository.addLinkBetweenUrl(pages.get(j).fromUrlId(), urlId);
-                        String[] linkWords = Arrays.stream(pages.get(j).urlText().split("[^a-zA-Zа-яА-Я0-9]+"))
+                    if (Objects.nonNull(urlId) && Objects.nonNull(page.fromUrlId())
+                            && Objects.nonNull(page.urlText())) {
+                        Integer linkBetweenUrlId = repository.addLinkBetweenUrl(page.fromUrlId(), urlId);
+                        String[] linkWords = Arrays.stream(page.urlText().split("[^a-zA-Zа-яА-Я0-9]+"))
                                 .filter((word) -> !filter.contains(word))
                                 .toArray(String[]::new);
                         repository.addLinkText(linkWords, linkBetweenUrlId);
@@ -95,15 +110,15 @@ public class Crawler {
                                 String unifiedLink;
                                 if (link.attr("href").startsWith("/")) {
                                     if (!link.attr("href").equals("/")) {
-                                        if (page.getPath().equals(link.attr("href"))
-                                                || (page.getPath() + "/").equals(link.attr("href"))) {
-                                            unifiedLink = page.toString();
+                                        if (url.getPath().equals(link.attr("href"))
+                                                || (url.getPath() + "/").equals(link.attr("href"))) {
+                                            unifiedLink = url.toString();
                                         } else {
-                                            unifiedLink = page + link.attr("href");
+                                            unifiedLink = url + link.attr("href");
                                         }
 
                                     } else {
-                                        unifiedLink = page.toString();
+                                        unifiedLink = url.toString();
                                     }
                                 } else {
                                     unifiedLink = link.attr("href");
@@ -116,6 +131,15 @@ public class Crawler {
                                     newPagesList.add(new Url(urlId, unifiedLink, link.text()));
                                 }
                             });
+                }
+
+                pagesProcessedCount++;
+                if (Objects.nonNull(statisticsCollectionIntervalPages)) {
+                    if (statisticsCollectionIntervalPages == 1) {
+                        statisticsService.collectRowsCountStatistics(pagesProcessedCount);
+                    } else if (pagesProcessedCount % statisticsCollectionIntervalPages == 0) {
+                        statisticsService.collectRowsCountStatistics(pagesProcessedCount);
+                    }
                 }
             }
             pages = newPagesList;

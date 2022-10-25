@@ -198,11 +198,21 @@ public class Repository {
 
     public ResultSet selectFromWhere(String table, String name, String value) throws SQLException {
         PreparedStatement preparedStatement = connection.prepareStatement(String.format(
-                "SELECT * FROM %s WHERE %s = %s;",
+                "SELECT * FROM %s WHERE %s = ?;",
                 table,
-                name,
-                value
+                name
         ));
+        preparedStatement.setString(1, value);
+        return preparedStatement.executeQuery();
+    }
+
+    public ResultSet selectFromWhere(String table, String name, Integer value) throws SQLException {
+        PreparedStatement preparedStatement = connection.prepareStatement(String.format(
+                "SELECT * FROM %s WHERE %s = ?;",
+                table,
+                name
+        ));
+        preparedStatement.setInt(1, value);
         return preparedStatement.executeQuery();
     }
 
