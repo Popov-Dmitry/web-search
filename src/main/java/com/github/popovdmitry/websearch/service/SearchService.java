@@ -7,8 +7,8 @@ import com.github.popovdmitry.websearch.utils.Tables;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class SearchService {
 
@@ -40,5 +40,38 @@ public class SearchService {
         List<Integer> wordsIds = getWordsIds(queryString);
         List<List<Integer>> locationCombinations = searchRepository.selectMatchWords(words, wordsIds);
         return new MatchWordsRecord(wordsIds, locationCombinations);
+    }
+
+    public Map<Integer, Double> getLocationScore(List<List<Integer>> locationCombinations) {
+        Map<Integer, Integer> locationMap = locationCombinations.stream()
+                .collect(Collectors.toMap((row) -> row.get(0), (row) -> 1000000));
+        locationCombinations.forEach((row) -> {
+            int sum = 0;
+            for (int i = 1; i < row.size(); i++) {
+                sum += row.get(i);
+            }
+            if (sum < locationMap.get(row.get(0))) {
+                locationMap.put(row.get(0), sum);
+            }
+        });
+
+        return normalizeScores(locationMap, true);
+    }
+
+    public Map<Integer, Double> normalizeScores(Map<Integer, Integer> scores, Boolean smallIsBetter) {
+        Map<Integer, Double> result = new Hashtable<>();
+        double smallValue = 0.00001;
+        Integer minScore = Collections.min(scores.values());
+        Integer maxScore = Collections.max(scores.values());
+
+        scores.forEach((key, value) -> {
+            if (smallIsBetter) {
+                result.put(key, minScore / Math.max(smallValue, value));
+            } else {
+                result.put(key, (double) (value / maxScore));
+            }
+        });
+
+        return result;
     }
 }
