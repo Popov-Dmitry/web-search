@@ -44,7 +44,11 @@ public class SearchService {
 
     public Map<Integer, Double> getLocationScore(List<List<Integer>> locationCombinations) {
         Map<Integer, Integer> locationMap = locationCombinations.stream()
-                .collect(Collectors.toMap((row) -> row.get(0), (row) -> 1000000));
+                .collect(Collectors.toMap(
+                        (row) -> row.get(0),
+                        (row) -> 1000000,
+                        (value1, value2) -> value1
+                ));
         locationCombinations.forEach((row) -> {
             int sum = 0;
             for (int i = 1; i < row.size(); i++) {
@@ -73,5 +77,39 @@ public class SearchService {
         });
 
         return result;
+    }
+
+    public Map<String, Double> getSortedMap(String queryString, Integer limit) throws SQLException, NotFoundException {
+        if (limit < 1) {
+            limit = Integer.MAX_VALUE;
+        }
+        MatchWordsRecord matchWords = getMatchWords(queryString);
+        Map<Integer, Double> locationScores = getLocationScore(matchWords.locationCombinations());
+
+        return locationScores.entrySet()
+                .stream()
+                .sorted(Map.Entry.<Integer, Double>comparingByValue().reversed())
+                .limit(limit)
+                .collect(Collectors.toMap(
+                        (entry) -> {
+                            try {
+                                ResultSet resultSet = searchRepository.selectFromWhere(
+                                        Tables.URL_LIST_TABLE,
+                                        "row_id",
+                                        entry.getKey()
+                                );
+                                resultSet.next();
+
+                                return resultSet.getString(2);
+                            } catch (SQLException e) {
+                                e.printStackTrace();
+                            }
+
+                            return entry.getKey().toString();
+                        },
+                        Map.Entry::getValue,
+                        (value1, value2) -> value1,
+                        LinkedHashMap::new
+                ));
     }
 }
