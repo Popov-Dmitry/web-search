@@ -85,6 +85,7 @@ public class SearchService {
         }
         MatchWordsRecord matchWords = getMatchWords(queryString);
         Map<Integer, Double> locationScores = getLocationScore(matchWords.locationCombinations());
+        Map<Integer, Double> pageRankScores = getNormalizedPageRankScores();
 
         return locationScores.entrySet()
                 .stream()
@@ -107,15 +108,13 @@ public class SearchService {
 
                             return entry.getKey().toString();
                         },
-                        Map.Entry::getValue,
+                        (entry) -> entry.getValue() + pageRankScores.get(entry.getKey()),
                         (value1, value2) -> value1,
                         LinkedHashMap::new
                 ));
     }
 
-
-
-    private Map<Integer, Double> getNormalizedPageRankScores() throws SQLException {
+    public Map<Integer, Double> getNormalizedPageRankScores() throws SQLException {
         ResultSet resultSet = searchRepository.selectAllFrom(Tables.PAGE_RANK_TABLE);
         Map<Integer, Double> scoresMap = new Hashtable<>();
         while (resultSet.next()) {
@@ -125,9 +124,13 @@ public class SearchService {
         Double minScore = Collections.min(scoresMap.values());
         Double maxScore = Collections.max(scoresMap.values());
 
-        return scoresMap.entrySet().stream().collect(Collectors.toMap(
-                Map.Entry::getKey,
-                (entry) -> (entry.getValue() - minScore) / (maxScore - minScore)
-        ));
+        return scoresMap.entrySet().stream()
+                .sorted(Map.Entry.<Integer, Double>comparingByValue().reversed())
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        (entry) -> (entry.getValue() - minScore) / (maxScore - minScore),
+                        (value1, value2) -> value1,
+                        LinkedHashMap::new
+                ));
     }
 }
