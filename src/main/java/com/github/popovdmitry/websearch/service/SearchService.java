@@ -112,4 +112,22 @@ public class SearchService {
                         LinkedHashMap::new
                 ));
     }
+
+
+
+    private Map<Integer, Double> getNormalizedPageRankScores() throws SQLException {
+        ResultSet resultSet = searchRepository.selectAllFrom(Tables.PAGE_RANK_TABLE);
+        Map<Integer, Double> scoresMap = new Hashtable<>();
+        while (resultSet.next()) {
+            scoresMap.put(resultSet.getInt(2), resultSet.getDouble(3));
+        }
+
+        Double minScore = Collections.min(scoresMap.values());
+        Double maxScore = Collections.max(scoresMap.values());
+
+        return scoresMap.entrySet().stream().collect(Collectors.toMap(
+                Map.Entry::getKey,
+                (entry) -> (entry.getValue() - minScore) / (maxScore - minScore)
+        ));
+    }
 }

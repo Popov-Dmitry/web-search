@@ -12,4 +12,6 @@ public class Tables {
     public static final String ROWS_COUNT_TABLE = ConfigUtils.getProperty("DB.TABLE.ROWS_COUNT");
     public static final String TOP_N_WORDS_TABLE = ConfigUtils.getProperty("DB.TABLE.TOP_N_WORDS");
     public static final String TOP_N_DOMAINS_TABLE = ConfigUtils.getProperty("DB.TABLE.TOP_N_DOMAINS");
+
+    public static final String PAGE_RANK_TABLE = ConfigUtils.getProperty("DB.TABLE.PAGE_RANK");
 }

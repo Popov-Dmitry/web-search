@@ -11,9 +11,11 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class CrawlerService {
 
@@ -153,5 +155,36 @@ public class CrawlerService {
         statisticsService.getSummary(n);
         crawlerRepository.close();
         statisticsService.close();
+    }
+
+    public void calculatePageRank(Integer iterations) throws SQLException {
+        crawlerRepository.preparePageRankTable();
+        ResultSet urls = crawlerRepository.selectAllFrom(Tables.URL_LIST_TABLE);
+        double d = 0.85;
+        for (int i = 0; i < iterations; i++) {
+            while (urls.next()) {
+                double pr = 1 - d;
+                ResultSet fromUrlIds = crawlerRepository.getDistinctFromUlrId(urls.getInt(1));
+                while (fromUrlIds.next()) {
+                    ResultSet resultSet = crawlerRepository.selectFromWhere(
+                            Tables.PAGE_RANK_TABLE,
+                            "url_id",
+                            fromUrlIds.getInt(1));
+                    resultSet.next();
+                    Integer pageRank = resultSet.getInt(3);
+                    Integer pageLinksCount = crawlerRepository.selectRowsCountFromWhere(
+                            Tables.LINK_BETWEEN_URL_TABLE,
+                            "from_url_id",
+                            fromUrlIds.getInt(1));
+                    pr += d * ((double) (pageRank / pageLinksCount));
+                }
+                crawlerRepository.updateValueWhere(
+                        Tables.PAGE_RANK_TABLE,
+                        "score",
+                        pr,
+                        "url_id",
+                        urls.getInt(1));
+            }
+        }
     }
 }

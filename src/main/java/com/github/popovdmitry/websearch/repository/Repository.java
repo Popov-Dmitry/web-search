@@ -41,6 +41,30 @@ public class Repository {
         return resultSet.getInt(1);
     }
 
+    public Integer selectRowsCountFromWhere(String table, String name, String value) throws SQLException {
+        PreparedStatement preparedStatement = connection.prepareStatement(String.format(
+                "SELECT count(*) FROM %s WHERE %s = ?;",
+                table,
+                name
+        ));
+        preparedStatement.setString(1, value);
+        ResultSet resultSet = preparedStatement.executeQuery();
+        resultSet.next();
+        return resultSet.getInt(1);
+    }
+
+    public Integer selectRowsCountFromWhere(String table, String name, Integer value) throws SQLException {
+        PreparedStatement preparedStatement = connection.prepareStatement(String.format(
+                "SELECT count(*) FROM %s WHERE %s = ?;",
+                table,
+                name
+        ));
+        preparedStatement.setInt(1, value);
+        ResultSet resultSet = preparedStatement.executeQuery();
+        resultSet.next();
+        return resultSet.getInt(1);
+    }
+
     public ResultSet selectFromWhere(String table, String name, String value) throws SQLException {
         PreparedStatement preparedStatement = connection.prepareStatement(String.format(
                 "SELECT * FROM %s WHERE %s = ?;",
@@ -63,5 +87,18 @@ public class Repository {
 
     public boolean isExist(String table, String name, String value) throws SQLException {
         return selectFromWhere(table, name, value).next();
+    }
+
+    public void updateValueWhere(String table, String updatedName, Double updatedValue, String whereName, Integer whereValue)
+            throws SQLException {
+        PreparedStatement preparedStatement = connection.prepareStatement(String.format(
+                "UPDATE %s SET %s = %s WHERE %s = ?;",
+                table,
+                updatedName,
+                updatedValue,
+                whereName
+        ));
+        preparedStatement.setInt(1, whereValue);
+        preparedStatement.executeUpdate();
     }
 }
