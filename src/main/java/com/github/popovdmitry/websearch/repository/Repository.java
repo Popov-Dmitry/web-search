@@ -75,6 +75,16 @@ public class Repository {
         return preparedStatement.executeQuery();
     }
 
+    public ResultSet selectFromWhereIgnoreCase(String table, String name, String value) throws SQLException {
+        PreparedStatement preparedStatement = connection.prepareStatement(String.format(
+                "SELECT * FROM %s WHERE LOWER(%s) = LOWER(?);",
+                table,
+                name
+        ));
+        preparedStatement.setString(1, value);
+        return preparedStatement.executeQuery();
+    }
+
     public ResultSet selectFromWhere(String table, String name, Integer value) throws SQLException {
         PreparedStatement preparedStatement = connection.prepareStatement(String.format(
                 "SELECT * FROM %s WHERE %s = ?;",

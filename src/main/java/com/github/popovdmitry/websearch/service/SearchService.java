@@ -22,7 +22,7 @@ public class SearchService {
         String[] words = queryString.trim().split("(\\s)+");
         List<Integer> wordIdsList = new ArrayList<>();
         for (String word : words) {
-            ResultSet resultSet = searchRepository.selectFromWhere(Tables.WORD_LIST_TABLE, "word", word);
+            ResultSet resultSet = searchRepository.selectFromWhereIgnoreCase(Tables.WORD_LIST_TABLE, "word", word);
             if (resultSet.next()) {
                 wordIdsList.add(resultSet.getInt(1));
             }
@@ -108,7 +108,7 @@ public class SearchService {
 
                             return entry.getKey().toString();
                         },
-                        (entry) -> entry.getValue() + pageRankScores.get(entry.getKey()),
+                        (entry) -> (entry.getValue() + pageRankScores.get(entry.getKey())) / 2,
                         (value1, value2) -> value1,
                         LinkedHashMap::new
                 ));
