@@ -27,7 +27,7 @@ public class Repository {
         PreparedStatement preparedStatement = connection.prepareStatement(String.format(
                 "SELECT * FROM %s;",
                 table
-        ));
+        ), ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
         return preparedStatement.executeQuery();
     }
 

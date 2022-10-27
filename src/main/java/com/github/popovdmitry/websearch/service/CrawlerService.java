@@ -1,6 +1,7 @@
 package com.github.popovdmitry.websearch.service;
 
 import com.github.popovdmitry.websearch.repository.CrawlerRepository;
+import com.github.popovdmitry.websearch.utils.ConfigUtils;
 import com.github.popovdmitry.websearch.utils.Tables;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
@@ -15,7 +16,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class CrawlerService {
 
@@ -153,11 +153,13 @@ public class CrawlerService {
             pages = newPagesList;
         }
         statisticsService.getSummary(n);
+        calculatePageRank(ConfigUtils.getIntegerProperty("CRAWLER.PAGE_RANK_ITERATIONS"));
+
         crawlerRepository.close();
         statisticsService.close();
     }
 
-    public void calculatePageRank(Integer iterations) throws SQLException {
+    private void calculatePageRank(Integer iterations) throws SQLException {
         crawlerRepository.preparePageRankTable();
         ResultSet urls = crawlerRepository.selectAllFrom(Tables.URL_LIST_TABLE);
         double d = 0.85;
@@ -171,12 +173,12 @@ public class CrawlerService {
                             "url_id",
                             fromUrlIds.getInt(1));
                     resultSet.next();
-                    Integer pageRank = resultSet.getInt(3);
+                    Double pageRank = resultSet.getDouble(3);
                     Integer pageLinksCount = crawlerRepository.selectRowsCountFromWhere(
                             Tables.LINK_BETWEEN_URL_TABLE,
                             "from_url_id",
                             fromUrlIds.getInt(1));
-                    pr += d * ((double) (pageRank / pageLinksCount));
+                    pr += d * (pageRank / pageLinksCount);
                 }
                 crawlerRepository.updateValueWhere(
                         Tables.PAGE_RANK_TABLE,
@@ -185,6 +187,7 @@ public class CrawlerService {
                         "url_id",
                         urls.getInt(1));
             }
+            urls.beforeFirst();
         }
     }
 }

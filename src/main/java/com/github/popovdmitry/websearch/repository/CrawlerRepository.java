@@ -193,24 +193,23 @@ public class CrawlerRepository extends Repository {
         statement.execute("DROP INDEX IF EXISTS rank_url_id_idx;");
         statement.execute(String.format("CREATE INDEX IF NOT EXISTS rank_url_id_idx ON %s(url_id)", Tables.PAGE_RANK_TABLE));
 
-        statement.execute("REINDEX word_idx;");
-        statement.execute("REINDEX url_idx;");
-        statement.execute("REINDEX word_url_idx;");
-        statement.execute("REINDEX url_to_idx;");
-        statement.execute("REINDEX url_from_idx;");
-        statement.execute("REINDEX rank_url_id_idx;");
+        statement.execute("REINDEX INDEX word_idx;");
+        statement.execute("REINDEX INDEX url_idx;");
+        statement.execute("REINDEX INDEX word_url_idx;");
+        statement.execute("REINDEX INDEX url_to_idx;");
+        statement.execute("REINDEX INDEX url_from_idx;");
+        statement.execute("REINDEX INDEX rank_url_id_idx;");
 
         statement.execute(String.format(
                 "INSERT INTO %s (url_id, score) SELECT row_id, 1.0 FROM %s;",
                 Tables.PAGE_RANK_TABLE,
                 Tables.URL_LIST_TABLE
         ));
-        getConnection().commit();
     }
 
     public ResultSet getDistinctFromUlrId(Integer toUrlId) throws SQLException {
         PreparedStatement preparedStatement = getConnection().prepareStatement(String.format(
-                "SELECT DISTINCT from_id FROM %s WHERE to_url_id = ?;",
+                "SELECT DISTINCT from_url_id FROM %s WHERE to_url_id = ?;",
                 Tables.LINK_BETWEEN_URL_TABLE
         ));
         preparedStatement.setInt(1, toUrlId);
