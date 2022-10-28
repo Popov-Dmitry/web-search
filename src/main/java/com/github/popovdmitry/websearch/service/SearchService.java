@@ -83,7 +83,7 @@ public class SearchService {
         return result;
     }
 
-    public Map<String, Double> getSortedMap(String queryString, Integer limit) throws SQLException, NotFoundException {
+    public Map<String, List<Double>> getSortedMap(String queryString, Integer limit) throws SQLException, NotFoundException {
         if (limit < 1) {
             limit = Integer.MAX_VALUE;
         }
@@ -124,7 +124,11 @@ public class SearchService {
 
                             return entry.getKey().toString();
                         },
-                        Map.Entry::getValue,
+                        (entry) -> {
+                            Double locationScore = locationScores.get(entry.getKey());
+                            Double pageRankScore = pageRankScores.get(entry.getKey());
+                            return List.of(locationScore, pageRankScore, (locationScore + pageRankScore) / 2);
+                        },
                         (value1, value2) -> value1,
                         LinkedHashMap::new
                 ));
