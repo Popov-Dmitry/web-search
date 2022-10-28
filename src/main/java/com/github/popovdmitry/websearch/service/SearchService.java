@@ -3,6 +3,7 @@ package com.github.popovdmitry.websearch.service;
 import com.github.popovdmitry.websearch.exception.NotFoundException;
 import com.github.popovdmitry.websearch.record.MatchWordsRecord;
 import com.github.popovdmitry.websearch.repository.SearchRepository;
+import com.github.popovdmitry.websearch.utils.HtmlUtils;
 import com.github.popovdmitry.websearch.utils.Tables;
 
 import java.sql.ResultSet;
@@ -13,9 +14,11 @@ import java.util.stream.Collectors;
 public class SearchService {
 
     private final SearchRepository searchRepository;
+    private final String resultsHtmlFilePath;
 
-    public SearchService() throws SQLException {
+    public SearchService(String resultsHtmlFilePath) throws SQLException {
         this.searchRepository = new SearchRepository();
+        this.resultsHtmlFilePath = resultsHtmlFilePath;
     }
 
     public List<Integer> getWordsIds(String queryString) throws SQLException, NotFoundException {
@@ -100,8 +103,17 @@ public class SearchService {
                                         entry.getKey()
                                 );
                                 resultSet.next();
+                                String url = resultSet.getString(2);
 
-                                return resultSet.getString(2);
+                                if (Objects.nonNull(resultsHtmlFilePath)) {
+                                    HtmlUtils.generateMarkedHtmlAndWriteFile(
+                                            queryString,
+                                            searchRepository.selectTextByUrlId(entry.getKey()),
+                                            resultsHtmlFilePath + entry.getKey() + ".html"
+                                    );
+                                }
+
+                                return url;
                             } catch (SQLException e) {
                                 e.printStackTrace();
                             }

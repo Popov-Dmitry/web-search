@@ -1,5 +1,7 @@
 package com.github.popovdmitry.websearch.repository;
 
+import com.github.popovdmitry.websearch.utils.Tables;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -74,5 +76,21 @@ public class SearchRepository extends Repository {
         }
 
         return result;
+    }
+
+    public List<String> selectTextByUrlId(Integer urlId) throws SQLException {
+        PreparedStatement preparedStatement = getConnection().prepareStatement(String.format(
+                "SELECT word FROM %s w_loc JOIN %s wl on w_loc.word_id = wl.row_id",
+                Tables.WORD_LOCATION_TABLE,
+                Tables.WORD_LIST_TABLE
+        ));
+        ResultSet resultSet = preparedStatement.executeQuery();
+        List<String> words = new ArrayList<>();
+
+        while (resultSet.next()) {
+            words.add(resultSet.getString(1));
+        }
+
+        return words;
     }
 }
