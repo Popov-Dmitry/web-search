@@ -27,7 +27,7 @@ public class CrawlerService {
     private final Integer statisticsCollectionIntervalPages;
     private final Integer pagesLimit;
 
-    record Url(Integer fromUrlId, String url, String urlText) {}
+    private record Url(Integer fromUrlId, String url, String urlText) {}
 
     public CrawlerService(String[] filter, Integer pagesLimit, Integer delay, Boolean loggingEnable,
                           Boolean dbInsertingEnable, Integer n, Integer statisticsCollectionIntervalPages) throws SQLException {

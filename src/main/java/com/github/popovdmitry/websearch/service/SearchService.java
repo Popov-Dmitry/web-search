@@ -1,7 +1,6 @@
 package com.github.popovdmitry.websearch.service;
 
 import com.github.popovdmitry.websearch.exception.NotFoundException;
-import com.github.popovdmitry.websearch.record.MatchWordsRecord;
 import com.github.popovdmitry.websearch.repository.SearchRepository;
 import com.github.popovdmitry.websearch.utils.HtmlUtils;
 import com.github.popovdmitry.websearch.utils.Tables;
@@ -16,12 +15,14 @@ public class SearchService {
     private final SearchRepository searchRepository;
     private final String resultsHtmlFilePath;
 
+    private record MatchWordsRecord(List<Integer> wordsIds, List<List<Integer>> locationCombinations) { }
+
     public SearchService(String resultsHtmlFilePath) throws SQLException {
         this.searchRepository = new SearchRepository();
         this.resultsHtmlFilePath = resultsHtmlFilePath;
     }
 
-    public List<Integer> getWordsIds(String queryString) throws SQLException, NotFoundException {
+    private List<Integer> getWordsIds(String queryString) throws SQLException, NotFoundException {
         String[] words = queryString.trim().split("(\\s)+");
         List<Integer> wordIdsList = new ArrayList<>();
         for (String word : words) {
@@ -38,14 +39,14 @@ public class SearchService {
         return wordIdsList;
     }
 
-    public MatchWordsRecord getMatchWords(String queryString) throws SQLException, NotFoundException {
+    private MatchWordsRecord getMatchWords(String queryString) throws SQLException, NotFoundException {
         String[] words = queryString.trim().split("(\\s)+");
         List<Integer> wordsIds = getWordsIds(queryString);
         List<List<Integer>> locationCombinations = searchRepository.selectMatchWords(words, wordsIds);
         return new MatchWordsRecord(wordsIds, locationCombinations);
     }
 
-    public Map<Integer, Double> getLocationScore(List<List<Integer>> locationCombinations) {
+    private Map<Integer, Double> getLocationScore(List<List<Integer>> locationCombinations) {
         Map<Integer, Integer> locationMap = locationCombinations.stream()
                 .collect(Collectors.toMap(
                         (row) -> row.get(0),
@@ -65,7 +66,7 @@ public class SearchService {
         return normalizeScores(locationMap, true);
     }
 
-    public Map<Integer, Double> normalizeScores(Map<Integer, Integer> scores, Boolean smallIsBetter) {
+    private Map<Integer, Double> normalizeScores(Map<Integer, Integer> scores, Boolean smallIsBetter) {
         Map<Integer, Double> result = new Hashtable<>();
         double smallValue = 0.00001;
         Integer minScore = Collections.min(scores.values());
@@ -126,7 +127,7 @@ public class SearchService {
                 ));
     }
 
-    public Map<Integer, Double> getNormalizedPageRankScores() throws SQLException {
+    private Map<Integer, Double> getNormalizedPageRankScores() throws SQLException {
         ResultSet resultSet = searchRepository.selectAllFrom(Tables.PAGE_RANK_TABLE);
         Map<Integer, Double> scoresMap = new Hashtable<>();
         while (resultSet.next()) {
