@@ -93,6 +93,9 @@ public class SearchService {
 
         return locationScores.entrySet()
                 .stream()
+                .map((entry) -> new AbstractMap.SimpleEntry<>(
+                        entry.getKey(),
+                        (entry.getValue() + pageRankScores.get(entry.getKey())) / 2))
                 .sorted(Map.Entry.<Integer, Double>comparingByValue().reversed())
                 .limit(limit)
                 .collect(Collectors.toMap(
@@ -121,7 +124,7 @@ public class SearchService {
 
                             return entry.getKey().toString();
                         },
-                        (entry) -> (entry.getValue() + pageRankScores.get(entry.getKey())) / 2,
+                        Map.Entry::getValue,
                         (value1, value2) -> value1,
                         LinkedHashMap::new
                 ));
