@@ -80,10 +80,11 @@ public class SearchRepository extends Repository {
 
     public List<String> selectTextByUrlId(Integer urlId) throws SQLException {
         PreparedStatement preparedStatement = getConnection().prepareStatement(String.format(
-                "SELECT word FROM %s w_loc JOIN %s wl on w_loc.word_id = wl.row_id",
+                "SELECT word FROM %s w_loc JOIN %s wl on w_loc.word_id = wl.row_id WHERE w_loc.url_id = ?",
                 Tables.WORD_LOCATION_TABLE,
                 Tables.WORD_LIST_TABLE
         ));
+        preparedStatement.setInt(1, urlId);
         ResultSet resultSet = preparedStatement.executeQuery();
         List<String> words = new ArrayList<>();
 
