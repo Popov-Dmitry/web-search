@@ -1,6 +1,8 @@
 package com.github.popovdmitry.websearch;
 
+import com.github.popovdmitry.websearch.exception.NotFoundException;
 import com.github.popovdmitry.websearch.service.CrawlerService;
+import com.github.popovdmitry.websearch.service.SearchService;
 import com.github.popovdmitry.websearch.utils.ConfigUtils;
 
 import java.io.IOException;
@@ -24,6 +26,12 @@ public class Main {
                     Integer.valueOf(ConfigUtils.getProperty("CRAWLER.DEPTH"))
             );
         } catch (SQLException | IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        try {
+            SearchService searchService = new SearchService(ConfigUtils.getProperty("SEARCHER.FILE_PATH"));
+            System.out.println(searchService.getSortedMap("python json", 3).toString());
+        } catch (SQLException | NotFoundException e) {
             e.printStackTrace();
         }
     }

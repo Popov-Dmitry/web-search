@@ -1,6 +1,7 @@
 package com.github.popovdmitry.websearch.service;
 
 import com.github.popovdmitry.websearch.repository.CrawlerRepository;
+import com.github.popovdmitry.websearch.utils.ConfigUtils;
 import com.github.popovdmitry.websearch.utils.Tables;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
@@ -11,6 +12,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -25,7 +27,7 @@ public class CrawlerService {
     private final Integer statisticsCollectionIntervalPages;
     private final Integer pagesLimit;
 
-    record Url(Integer fromUrlId, String url, String urlText) {}
+    private record Url(Integer fromUrlId, String url, String urlText) {}
 
     public CrawlerService(String[] filter, Integer pagesLimit, Integer delay, Boolean loggingEnable,
                           Boolean dbInsertingEnable, Integer n, Integer statisticsCollectionIntervalPages) throws SQLException {
@@ -151,7 +153,41 @@ public class CrawlerService {
             pages = newPagesList;
         }
         statisticsService.getSummary(n);
+        calculatePageRank(ConfigUtils.getIntegerProperty("CRAWLER.PAGE_RANK_ITERATIONS"));
+
         crawlerRepository.close();
         statisticsService.close();
+    }
+
+    private void calculatePageRank(Integer iterations) throws SQLException {
+        crawlerRepository.preparePageRankTable();
+        ResultSet urls = crawlerRepository.selectAllFrom(Tables.URL_LIST_TABLE);
+        double d = 0.85;
+        for (int i = 0; i < iterations; i++) {
+            while (urls.next()) {
+                double pr = 1 - d;
+                ResultSet fromUrlIds = crawlerRepository.getDistinctFromUlrId(urls.getInt(1));
+                while (fromUrlIds.next()) {
+                    ResultSet resultSet = crawlerRepository.selectFromWhere(
+                            Tables.PAGE_RANK_TABLE,
+                            "url_id",
+                            fromUrlIds.getInt(1));
+                    resultSet.next();
+                    Double pageRank = resultSet.getDouble(3);
+                    Integer pageLinksCount = crawlerRepository.selectRowsCountFromWhere(
+                            Tables.LINK_BETWEEN_URL_TABLE,
+                            "from_url_id",
+                            fromUrlIds.getInt(1));
+                    pr += d * (pageRank / pageLinksCount);
+                }
+                crawlerRepository.updateValueWhere(
+                        Tables.PAGE_RANK_TABLE,
+                        "score",
+                        pr,
+                        "url_id",
+                        urls.getInt(1));
+            }
+            urls.beforeFirst();
+        }
     }
 }
