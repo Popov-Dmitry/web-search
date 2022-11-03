@@ -12,7 +12,7 @@
 
 ## Как настроить проект на вашем компьютере
 
-- Установить [JDK 17](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html) и [PostgreSQL](https://www.postgresql.org/)
+- Установить [JDK 17](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html) и [PostgreSQL](https://www.postgresql.org/) (все необходимые таблицы создадуться при запуске автоматически)
 - Клонировать [этот](https://github.com/Popov-Dmitry/web-search) репозиторий
 - В файле `./src/main/resources/config.properties` изменить параметры для доступа к БД:
 - - `DB.URL` - url-адрес подключения к БД
@@ -35,7 +35,7 @@
 
 
 - И параметр поисковика:
-- - `SEARCHER.FILE_PATH` - путь, где сохранять размеченые HTML файлы по результатам поиска (если нужно)
+- - `SEARCHER.FILE_PATH` - путь, где сохранять размеченные HTML файлы по результатам поиска (если нужно)
 
 ## Доступное API и примеры использования
 
